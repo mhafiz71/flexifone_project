@@ -221,7 +221,7 @@ def stripe_config(request):
     return JsonResponse(config, safe=False)
 
 
-# --- NEW EMBEDDED PAYMENT VIEWS ---
+# --- EMBEDDED PAYMENT VIEWS ---
 
 
 @login_required
@@ -247,8 +247,12 @@ def create_payment_intent(request):
         try:
             amount = float(request.POST.get('amount'))
             amount_pence = int(amount * 100)
+            print(
+                f"Creating payment intent for amount: £{amount} ({amount_pence} pence)")
 
             credit_account = request.user.credit_account
+            print(
+                f"Credit account: {credit_account.id} for user: {request.user.username}")
 
             payment_intent = stripe.PaymentIntent.create(
                 amount=amount_pence,
@@ -258,11 +262,14 @@ def create_payment_intent(request):
                     'user_id': request.user.id
                 }
             )
+            print(
+                f"Created payment intent: {payment_intent.id} with metadata: {payment_intent.metadata}")
 
             return JsonResponse({
                 'client_secret': payment_intent.client_secret
             })
         except Exception as e:
+            print(f"Error creating payment intent: {str(e)}")
             return JsonResponse({'error': str(e)}, status=400)
 
 
@@ -270,140 +277,33 @@ def create_payment_intent(request):
 def payment_success_view(request):
     """Handle successful payment redirect"""
     payment_intent_id = request.GET.get('payment_intent')
+    print(
+        f"Payment success view called with payment_intent_id: {payment_intent_id}")
 
     if payment_intent_id:
         try:
+            print(f"Retrieving payment intent: {payment_intent_id}")
             payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-            return process_payment_success(request, payment_intent)
-        except Exception as e:
-            messages.error(request, f"Error processing payment: {str(e)}")
-
-    return redirect('accounts:dashboard')
-
-
-def process_payment_success(request, payment_intent):
-    """Process successful payment"""
-    try:
-        credit_account_id = payment_intent.metadata.get('credit_account_id')
-        account = CreditAccount.objects.get(id=credit_account_id)
-
-        # Convert from pence to pounds
-        amount_paid = payment_intent.amount / 100
-
-        # Update account balance
-        account.balance += amount_paid
-
-        # Create transaction record
-        Transaction.objects.create(
-            account=account,
-            amount=amount_paid,
-            transaction_type=Transaction.TransactionType.PAYMENT,
-            transaction_id=payment_intent.id,
-            stripe_payment_intent=payment_intent.id,
-            description=f"Payment for {account.product.name}"
-        )
-
-        # Check if account is completed
-        if account.balance >= account.product.price and account.status != CreditAccount.Status.COMPLETED:
-            account.status = CreditAccount.Status.COMPLETED
-
-            # Send completion email
-            subject = f"Congratulations! Your plan for the {account.product.name} is complete!"
-            message = render_to_string('emails/plan_completed.txt', {
-                'user': account.user,
-                'account': account,
-            })
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[account.user.email],
-                fail_silently=True,
-            )
-
-        account.save()
-        messages.success(
-            request, f"Payment of £{amount_paid} processed successfully!")
-
-    except Exception as e:
-        messages.error(request, f"Error processing payment: {str(e)}")
-
-    return redirect('accounts:dashboard')
-
-# --- NEW EMBEDDED PAYMENT VIEWS ---
-
-
-@login_required
-def embedded_payment_view(request):
-    """Handle embedded payment form"""
-    try:
-        credit_account = request.user.credit_account
-    except CreditAccount.DoesNotExist:
-        messages.error(request, "You don't have an active credit account.")
-        return redirect('accounts:dashboard')
-
-    if request.method == 'POST':
-        amount = request.POST.get('amount')
-        payment_method_id = request.POST.get('payment_method_id')
-
-        if not amount or not payment_method_id:
-            messages.error(request, "Missing payment information.")
-            return redirect('accounts:dashboard')
-
-        try:
-            amount_pounds = float(amount)
-            amount_pence = int(amount_pounds * 100)
-
-            # Create payment intent
-            payment_intent = stripe.PaymentIntent.create(
-                amount=amount_pence,
-                currency='gbp',
-                payment_method=payment_method_id,
-                confirm=True,
-                return_url=request.build_absolute_uri(
-                    '/accounts/payment-success/'),
-                metadata={
-                    'credit_account_id': credit_account.id,
-                    'user_id': request.user.id
-                }
-            )
+            print(
+                f"Payment intent retrieved: {payment_intent.id}, status: {payment_intent.status}")
 
             if payment_intent.status == 'succeeded':
-                # Process the payment immediately
+                print(f"Payment intent succeeded, processing payment...")
                 return process_payment_success(request, payment_intent)
-            elif payment_intent.status == 'requires_action':
-                # Handle 3D Secure or other authentication
-                return JsonResponse({
-                    'requires_action': True,
-                    'payment_intent_client_secret': payment_intent.client_secret
-                })
             else:
-                messages.error(request, "Payment failed. Please try again.")
-                return redirect('accounts:dashboard')
-
-        except stripe.error.CardError as e:
-            messages.error(request, f"Card error: {e.error.message}")
+                print(
+                    f"Payment intent not succeeded, status: {payment_intent.status}")
+                messages.error(
+                    request, f"Payment not completed. Status: {payment_intent.status}")
+        except stripe.error.StripeError as e:
+            print(f"Stripe error: {str(e)}")
+            messages.error(request, f"Stripe error: {str(e)}")
         except Exception as e:
-            messages.error(request, f"Payment error: {str(e)}")
-
-    context = {
-        'credit_account': credit_account,
-        'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY
-    }
-    return render(request, 'embedded_payment.html', context)
-
-
-@login_required
-def payment_success_view(request):
-    """Handle successful payment redirect"""
-    payment_intent_id = request.GET.get('payment_intent')
-
-    if payment_intent_id:
-        try:
-            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-            return process_payment_success(request, payment_intent)
-        except Exception as e:
+            print(f"Error processing payment: {str(e)}")
             messages.error(request, f"Error processing payment: {str(e)}")
+    else:
+        print("No payment_intent_id provided")
+        messages.error(request, "No payment information found.")
 
     return redirect('accounts:dashboard')
 
@@ -411,17 +311,31 @@ def payment_success_view(request):
 def process_payment_success(request, payment_intent):
     """Process successful payment"""
     try:
+        print(f"Processing payment intent: {payment_intent.id}")
         credit_account_id = payment_intent.metadata.get('credit_account_id')
-        account = CreditAccount.objects.get(id=credit_account_id)
+        print(f"Credit account ID from metadata: {credit_account_id}")
 
-        # Convert from pence to pounds
-        amount_paid = payment_intent.amount / 100
+        if not credit_account_id:
+            print("Error: No credit_account_id in metadata")
+            messages.error(
+                request, "Error: No credit account ID found in payment metadata.")
+            return redirect('accounts:dashboard')
+
+        account = CreditAccount.objects.get(id=credit_account_id)
+        print(f"Found account: {account.id} for user: {account.user.username}")
+
+        # Convert from pence to pounds and ensure it's a Decimal
+        from decimal import Decimal
+        amount_paid = Decimal(str(payment_intent.amount / 100))
+        print(f"Amount paid: £{amount_paid}")
 
         # Update account balance
+        old_balance = account.balance
         account.balance += amount_paid
+        print(f"Updated balance from £{old_balance} to £{account.balance}")
 
         # Create transaction record
-        Transaction.objects.create(
+        transaction = Transaction.objects.create(
             account=account,
             amount=amount_paid,
             transaction_type=Transaction.TransactionType.PAYMENT,
@@ -429,10 +343,12 @@ def process_payment_success(request, payment_intent):
             stripe_payment_intent=payment_intent.id,
             description=f"Payment for {account.product.name}"
         )
+        print(f"Created transaction: {transaction.id}")
 
         # Check if account is completed
         if account.balance >= account.product.price and account.status != CreditAccount.Status.COMPLETED:
             account.status = CreditAccount.Status.COMPLETED
+            print(f"Account {account.id} marked as completed")
 
             # Send completion email
             subject = f"Congratulations! Your plan for the {account.product.name} is complete!"
@@ -449,39 +365,18 @@ def process_payment_success(request, payment_intent):
             )
 
         account.save()
+        print(f"Account saved successfully")
         messages.success(
             request, f"Payment of £{amount_paid} processed successfully!")
 
+    except CreditAccount.DoesNotExist:
+        print(f"Error: CreditAccount with ID {credit_account_id} not found")
+        messages.error(request, f"Error: Credit account not found.")
     except Exception as e:
+        print(f"Error processing payment: {str(e)}")
         messages.error(request, f"Error processing payment: {str(e)}")
 
     return redirect('accounts:dashboard')
-
-
-@login_required
-def create_payment_intent(request):
-    """Create payment intent for embedded form"""
-    if request.method == 'POST':
-        try:
-            amount = float(request.POST.get('amount'))
-            amount_pence = int(amount * 100)
-
-            credit_account = request.user.credit_account
-
-            payment_intent = stripe.PaymentIntent.create(
-                amount=amount_pence,
-                currency='gbp',
-                metadata={
-                    'credit_account_id': credit_account.id,
-                    'user_id': request.user.id
-                }
-            )
-
-            return JsonResponse({
-                'client_secret': payment_intent.client_secret
-            })
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
 
 
 # --- LEGACY WEBHOOK VIEWS (keeping for compatibility) ---
@@ -568,8 +463,9 @@ def stripe_webhook(request):
 
         try:
             account = CreditAccount.objects.get(id=credit_account_id)
-            # Convert from pence to pounds
-            amount_paid = session.get('amount_total', 0) / 100
+            # Convert from pence to pounds and ensure it's a Decimal
+            from decimal import Decimal
+            amount_paid = Decimal(str(session.get('amount_total', 0) / 100))
             print(
                 f"Processing payment of £{amount_paid} for account {account.id}")
 
