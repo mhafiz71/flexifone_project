@@ -1,0 +1,15 @@
+subject = f"Welcome to your FlexiFone Plan for the {account.product.name}!"
+        
+        # We can pass context to a text template
+        message = render_to_string('emails/welcome_email.txt', {
+            'user': request.user,
+            'account': account,
+        })
+        
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[request.user.email],
+            fail_silently=False, # Set to True in production if you don't want errors to stop the request
+        )

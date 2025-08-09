@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Webhook Test - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">Webhook Testing</h1>
+        
+        <div class="space-y-4">
+            <div class="bg-blue-50 rounded-lg p-4">
+                <h3 class="font-semibold text-blue-900 mb-2">Webhook URL</h3>
+                <p class="text-sm text-blue-700 font-mono">{{ request.build_absolute_uri:'accounts:stripe_webhook' }}</p>
+            </div>
+            
+            <div class="bg-green-50 rounded-lg p-4">
+                <h3 class="font-semibold text-green-900 mb-2">Test Webhook URL</h3>
+                <p class="text-sm text-green-700 font-mono">{{ request.build_absolute_uri:'accounts:test_webhook' }}</p>
+            </div>
+            
+            <div class="bg-yellow-50 rounded-lg p-4">
+                <h3 class="font-semibold text-yellow-900 mb-2">Instructions</h3>
+                <ul class="text-sm text-yellow-700 space-y-1">
+                    <li>• Use the webhook URL in your Stripe dashboard</li>
+                    <li>• Test webhook URL for debugging</li>
+                    <li>• Check server logs for webhook events</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

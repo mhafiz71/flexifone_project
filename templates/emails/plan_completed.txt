@@ -1,0 +1,11 @@
+Hi {{ user.username }},
+
+CONGRATULATIONS!
+
+You have successfully paid the full amount for your {{ account.product.name }}.
+
+Our team will now begin processing your order for dispatch. You will receive a separate notification with tracking details within the next 48 hours.
+
+Thank you for choosing FlexiFone!
+
+- The FlexiFone Team

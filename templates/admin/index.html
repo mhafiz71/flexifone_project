@@ -1,0 +1,10 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content %}
+    <div style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 2rem; background-color: #f8f9fa;">
+        <h2 style="font-size: 1.5rem; margin-top: 0;">Quick Access</h2>
+        <p><a href="{% url 'accounts:business_dashboard' %}" class="button">View Business Intelligence Dashboard</a></p>
+    </div>
+    {{ block.super }}
+{% endblock %}

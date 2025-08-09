@@ -1,0 +1,155 @@
+<!-- templates/_dashboard_savings.html -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Your Savings Plan</h2>
+            <p class="text-gray-600">{{ credit_account.product.brand }} {{ credit_account.product.name }}</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <i class="fas fa-piggy-bank mr-2"></i>
+                Save-to-Own
+            </span>
+        </div>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Progress Bar -->
+        <div class="lg:col-span-2">
+            <div class="bg-gray-50 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Savings Progress</h3>
+                    <span class="text-2xl font-bold text-green-600">{{ credit_account.progress_percentage }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-300" 
+                         style="width: {{ credit_account.progress_percentage }}%"></div>
+                </div>
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <span>Amount Saved: £{{ credit_account.balance }}</span>
+                    <span>Remaining: £{{ credit_account.remaining_balance }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="space-y-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-600">Total Price</span>
+                    <i class="fas fa-tag text-green-600"></i>
+                </div>
+                <p class="text-2xl font-bold text-gray-900">£{{ credit_account.product.price }}</p>
+            </div>
+            
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-600">Amount Saved</span>
+                    <i class="fas fa-piggy-bank text-green-600"></i>
+                </div>
+                <p class="text-2xl font-bold text-green-600">£{{ credit_account.balance }}</p>
+            </div>
+            
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-600">Remaining</span>
+                    <i class="fas fa-calculator text-green-600"></i>
+                </div>
+                <p class="text-2xl font-bold text-gray-900">£{{ credit_account.remaining_balance }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Balance Details -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6">
+            <div class="flex items-center mb-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-pound-sign text-blue-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Price</p>
+                    <p class="text-2xl font-bold text-gray-900">£{{ credit_account.product.price }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
+            <div class="flex items-center mb-3">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-check-circle text-green-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Amount Saved</p>
+                    <p class="text-2xl font-bold text-gray-900">£{{ credit_account.balance }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-6">
+            <div class="flex items-center mb-3">
+                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-credit-card text-orange-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Remaining</p>
+                    <p class="text-2xl font-bold text-gray-900">£{{ credit_account.remaining_balance }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Payment Form -->
+        <div class="bg-gray-50 rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Make a Payment</h3>
+            <div class="space-y-4">
+                <a href="{% url 'accounts:embedded_payment' %}" 
+                   class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center">
+                    <i class="fas fa-credit-card mr-2"></i>
+                    Make Payment
+                </a>
+                <p class="text-xs text-gray-500 text-center">
+                    Secure payment processing with Stripe
+                </p>
+            </div>
+        </div>
+
+        <!-- Payment Info -->
+        <div class="space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-info-circle text-blue-600 mt-1"></i>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 mb-1">How it works</h4>
+                        <p class="text-xs text-gray-600">Make payments towards your phone. Once you've saved the full amount, your phone will be shipped to you.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-green-50 rounded-xl p-4">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-shield-alt text-green-600 mt-1"></i>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 mb-1">Secure Payments</h4>
+                        <p class="text-xs text-gray-600">All payments are processed securely through Stripe with bank-level encryption.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-purple-50 rounded-xl p-4">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-gift text-purple-600 mt-1"></i>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 mb-1">No Interest</h4>
+                        <p class="text-xs text-gray-600">Save-to-Own plans have 0% interest. You only pay the phone's retail price.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

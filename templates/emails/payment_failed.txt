@@ -1,0 +1,12 @@
+Hi {{ user.username }},
+
+We were unable to process the scheduled installment of £{{ account.installment_amount }} for your {{ account.product.name }} plan.
+
+Reason provided by the bank: {{ error_message }}
+
+To keep your account in good standing and avoid service interruptions, please update your payment method as soon as possible by visiting your dashboard.
+
+If you believe this is an error, please contact your bank or our support team.
+
+Thanks,
+The FlexiFone Team

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Plan Agreement{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
+    <h2 class="text-2xl font-bold text-center mb-4">Your FlexiFone Plan Agreement</h2>
+    <p class="text-center text-gray-600 mb-6">Please review and accept the terms for your <strong>{{ account.product.name }}</strong> plan.</p>
+
+    <div class="prose prose-sm border rounded-md p-4 max-h-64 overflow-y-auto">
+        <h4>1. Introduction</h4>
+        <p>This is a "Save-to-Own" agreement. You are making incremental deposits towards the full purchase price of the product. The product remains the property of FlexiFone until the full amount of £{{ account.product.price }} is paid.</p>
+        <h4>2. Payments</h4>
+        <p>You can make payments of any amount at any time. All payments are non-refundable but will be credited towards your account balance.</p>
+        <h4>3. Completion</h4>
+        <p>Once your balance reaches the full product price, we will notify you and arrange for the dispatch or collection of your new device.</p>
+        <h4>4. Data Privacy</h4>
+        <p>We will handle your personal data in accordance with our privacy policy...</p>
+        <p><em>(This is placeholder text. A real agreement would be much more detailed and legally reviewed.)</em></p>
+    </div>
+
+    <form method="post" class="mt-6">
+        {% csrf_token %}
+        <div class="flex items-center">
+            <input id="terms" name="terms" type="checkbox" required class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+            <label for="terms" class="ml-2 block text-sm text-gray-900">
+              I have read and agree to the terms and conditions.
+            </label>
+        </div>
+        <button type="submit" class="mt-6 w-full bg-green-600 text-white rounded-md py-2 hover:bg-green-700">Accept and Start My Plan</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Business Intelligence Dashboard{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <!-- We're using a CDN for Tailwind for simplicity on this admin page -->
+    <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Business Intelligence Dashboard</h1>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Card 1: Total Users -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-medium text-gray-500">Total Users</h3>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_users }}</p>
+        </div>
+        <!-- Card 2: Active Plans -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-medium text-gray-500">Active Plans (Savings / BNPL)</h3>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ active_savings_plans }} / {{ active_bnpl_plans }}</p>
+        </div>
+        <!-- Card 3: Overdue Accounts -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-medium text-gray-500">Overdue BNPL Accounts</h3>
+            <p class="text-3xl font-bold text-red-600 mt-1">{{ overdue_plans }}</p>
+        </div>
+        <!-- Card 4: Default Rate -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-medium text-gray-500">BNPL Default Rate</h3>
+            <p class="text-3xl font-bold text-red-600 mt-1">{{ default_rate }}</p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold mb-4">Overall Plan Distribution</h3>
+            <canvas id="planStatusChart"></canvas>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold mb-4">BNPL Portfolio Health</h3>
+            <canvas id="bnplHealthChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Data passed securely from Django view to JavaScript -->
+{{ chart_data|json_script:"chart-data" }}
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+
+    // --- Chart 1: Plan Status Distribution ---
+    const planStatusCtx = document.getElementById('planStatusChart').getContext('2d');
+    new Chart(planStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.plan_status_labels,
+            datasets: [{
+                label: 'Plan Status',
+                data: chartData.plan_status_data,
+                backgroundColor: [
+                    'rgba(79, 70, 229, 0.7)', // Indigo
+                    'rgba(5, 150, 105, 0.7)',  // Emerald
+                    'rgba(107, 114, 128, 0.7)' // Gray
+                ],
+                borderColor: [
+                    'rgba(79, 70, 229, 1)',
+                    'rgba(5, 150, 105, 1)',
+                    'rgba(107, 114, 128, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: false }
+            }
+        }
+    });
+
+    // --- Chart 2: BNPL Health ---
+    const bnplHealthCtx = document.getElementById('bnplHealthChart').getContext('2d');
+    new Chart(bnplHealthCtx, {
+        type: 'pie',
+        data: {
+            labels: chartData.bnpl_health_labels,
+            datasets: [{
+                label: 'BNPL Health',
+                data: chartData.bnpl_health_data,
+                backgroundColor: [
+                    'rgba(34, 197, 94, 0.7)', // Green
+                    'rgba(220, 38, 38, 0.7)'   // Red
+                ],
+                borderColor: [
+                    'rgba(34, 197, 94, 1)',
+                    'rgba(220, 38, 38, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: false }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

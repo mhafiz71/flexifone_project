@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Payment History - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Payment History</h1>
+        <p class="text-gray-600">Track all your payments and transactions</p>
+    </div>
+
+    {% if credit_account %}
+        <!-- Account Summary -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Account Summary</h2>
+                <span class="px-3 py-1 text-sm font-medium rounded-full 
+                    {% if credit_account.status == 'ACTIVE' %}bg-green-100 text-green-800
+                    {% elif credit_account.status == 'REPAYING' %}bg-blue-100 text-blue-800
+                    {% elif credit_account.status == 'OVERDUE' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ credit_account.get_status_display }}
+                </span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 mb-1">Total Amount</p>
+                    <p class="text-2xl font-bold text-gray-900">£{{ credit_account.loan_amount }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 mb-1">Amount Paid</p>
+                    <p class="text-2xl font-bold text-green-600">£{{ credit_account.balance }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 mb-1">Remaining</p>
+                    <p class="text-2xl font-bold text-gray-900">£{{ credit_account.loan_amount|add:"-"|add:credit_account.balance }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Transaction History</h3>
+            </div>
+            
+            {% if transactions %}
+                <div class="divide-y divide-gray-200">
+                    {% for transaction in transactions %}
+                        <div class="px-6 py-4 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                        {% if transaction.transaction_type == 'PAYMENT' %}bg-green-100 text-green-600
+                                        {% elif transaction.transaction_type == 'CHARGE' %}bg-red-100 text-red-600
+                                        {% else %}bg-gray-100 text-gray-600{% endif %}">
+                                        {% if transaction.transaction_type == 'PAYMENT' %}
+                                            <i class="fas fa-arrow-down text-sm"></i>
+                                        {% elif transaction.transaction_type == 'CHARGE' %}
+                                            <i class="fas fa-arrow-up text-sm"></i>
+                                        {% else %}
+                                            <i class="fas fa-exchange-alt text-sm"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900">
+                                            {% if transaction.transaction_type == 'PAYMENT' %}
+                                                Payment Received
+                                            {% elif transaction.transaction_type == 'CHARGE' %}
+                                                Payment Due
+                                            {% else %}
+                                                {{ transaction.description|default:"Transaction" }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-sm text-gray-500">{{ transaction.timestamp|date:"M d, Y" }} at {{ transaction.timestamp|date:"g:i A" }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-gray-900
+                                        {% if transaction.transaction_type == 'PAYMENT' %}text-green-600
+                                        {% elif transaction.transaction_type == 'CHARGE' %}text-red-600
+                                        {% endif %}">
+                                        {% if transaction.transaction_type == 'PAYMENT' %}+{% endif %}£{{ transaction.amount }}
+                                    </p>
+                                    {% if transaction.transaction_id %}
+                                        <p class="text-xs text-gray-500">ID: {{ transaction.transaction_id|truncatechars:12 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="px-6 py-12 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-receipt text-gray-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
+                    <p class="text-gray-500">Your payment history will appear here once you make your first payment.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-8 flex flex-col sm:flex-row gap-4">
+            <a href="{% url 'accounts:manage_payments' %}" 
+               class="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors text-center">
+                <i class="fas fa-credit-card mr-2"></i>
+                Manage Payment Methods
+            </a>
+            <a href="{% url 'accounts:dashboard' %}" 
+               class="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors text-center">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Dashboard
+            </a>
+        </div>
+
+    {% else %}
+        <!-- No Account -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-credit-card text-gray-400 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Payment History</h3>
+            <p class="text-gray-500 mb-6">You don't have any active credit accounts yet.</p>
+            <a href="{% url 'accounts:dashboard' %}" 
+               class="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

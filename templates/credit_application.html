@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Credit Application - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Credit Application</h1>
+        <p class="text-lg text-gray-600">Complete your application to purchase the {{ product.brand }} {{ product.name }} on credit</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Application Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
+                
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Employment Status -->
+                    <div>
+                        <label for="{{ form.employment_status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Employment Status
+                        </label>
+                        {{ form.employment_status }}
+                        {% if form.employment_status.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.employment_status.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Monthly Income -->
+                    <div>
+                        <label for="{{ form.monthly_income.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Monthly Income
+                        </label>
+                        {{ form.monthly_income }}
+                        {% if form.monthly_income.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.monthly_income.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Monthly Expenses -->
+                    <div>
+                        <label for="{{ form.monthly_expenses.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Monthly Expenses
+                        </label>
+                        {{ form.monthly_expenses }}
+                        {% if form.monthly_expenses.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.monthly_expenses.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Installment Count -->
+                    <div>
+                        <label for="{{ form.installment_count.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Payment Term
+                        </label>
+                        {{ form.installment_count }}
+                        {% if form.installment_count.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.installment_count.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="pt-6">
+                        <button type="submit" 
+                                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center">
+                            <i class="fas fa-paper-plane mr-3"></i>
+                            Submit Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Product & Payment Info -->
+        <div class="space-y-6">
+            <!-- Product Card -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="text-center mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-mobile-alt text-2xl text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ product.brand }} {{ product.name }}</h3>
+                    <p class="text-sm text-gray-600">{{ product.description|truncatewords:10 }}</p>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-600">Full Price</span>
+                        <span class="text-lg font-bold text-gray-900">£{{ product.price }}</span>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Monthly (12 months)</span>
+                            <span class="text-sm font-semibold text-green-600">£{{ monthly_payment_12|floatformat:2 }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Monthly (6 months)</span>
+                            <span class="text-sm font-semibold text-green-600">£{{ monthly_payment_6|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Information -->
+            <div class="bg-blue-50 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Credit Information</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-900">Instant Decision</h4>
+                            <p class="text-xs text-gray-600">Get approved in minutes with our automated system</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-shield-alt text-blue-500 mt-1"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-900">Secure Process</h4>
+                            <p class="text-xs text-gray-600">Your information is protected with bank-level security</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-clock text-purple-500 mt-1"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-900">No Hidden Fees</h4>
+                            <p class="text-xs text-gray-600">Transparent pricing with no surprise charges</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requirements -->
+            <div class="bg-gray-50 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Requirements</h3>
+                <div class="space-y-2 text-sm text-gray-600">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        <span>Verified account</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        <span>Valid ID document</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        <span>Stable income</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        <span>Good credit history</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
