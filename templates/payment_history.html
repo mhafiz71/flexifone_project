@@ -26,15 +26,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="text-center">
                     <p class="text-sm text-gray-600 mb-1">Total Amount</p>
-                    <p class="text-2xl font-bold text-gray-900">£{{ credit_account.loan_amount }}</p>
+                    <p class="text-2xl font-bold text-gray-900">₵{{ credit_account.loan_amount }}</p>
                 </div>
                 <div class="text-center">
                     <p class="text-sm text-gray-600 mb-1">Amount Paid</p>
-                    <p class="text-2xl font-bold text-green-600">£{{ credit_account.balance }}</p>
+                    <p class="text-2xl font-bold text-green-600">₵{{ credit_account.balance }}</p>
                 </div>
                 <div class="text-center">
                     <p class="text-sm text-gray-600 mb-1">Remaining</p>
-                    <p class="text-2xl font-bold text-gray-900">£{{ credit_account.loan_amount|add:"-"|add:credit_account.balance }}</p>
+                    <p class="text-2xl font-bold text-gray-900">₵{{ credit_account.loan_amount|add:"-"|add:credit_account.balance }}</p>
                 </div>
             </div>
         </div>
@@ -81,7 +81,7 @@
                                         {% if transaction.transaction_type == 'PAYMENT' %}text-green-600
                                         {% elif transaction.transaction_type == 'CHARGE' %}text-red-600
                                         {% endif %}">
-                                        {% if transaction.transaction_type == 'PAYMENT' %}+{% endif %}£{{ transaction.amount }}
+                                        {% if transaction.transaction_type == 'PAYMENT' %}+{% endif %}₵{{ transaction.amount }}
                                     </p>
                                     {% if transaction.transaction_id %}
                                         <p class="text-xs text-gray-500">ID: {{ transaction.transaction_id|truncatechars:12 }}</p>

@@ -1,6 +1,6 @@
 Hi {{ user.username }},
 
-We were unable to process the scheduled installment of £{{ account.installment_amount }} for your {{ account.product.name }} plan.
+We were unable to process the scheduled installment of ₵{{ account.installment_amount }} for your {{ account.product.name }} plan.
 
 Reason provided by the bank: {{ error_message }}
 

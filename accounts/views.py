@@ -172,7 +172,7 @@ def credit_application_view(request, product_id):
             # Calculate credit score based on various factors
             base_score = request.user.credit_score
             income_score = min(100, (monthly_income / 5000)
-                               * 100)  # Cap at £5000
+                               * 100)  # Cap at ₵5000
             dti_score = max(0, 100 - debt_to_income)  # Lower DTI is better
 
             # Weighted average
@@ -246,17 +246,17 @@ def create_payment_intent(request):
     if request.method == 'POST':
         try:
             amount = float(request.POST.get('amount'))
-            amount_pence = int(amount * 100)
+             amount_pesewas = int(amount * 100)
             print(
-                f"Creating payment intent for amount: £{amount} ({amount_pence} pence)")
+                f"Creating payment intent for amount: ₵{amount} ({amount_pesewas} pesewas)")
 
             credit_account = request.user.credit_account
             print(
                 f"Credit account: {credit_account.id} for user: {request.user.username}")
 
             payment_intent = stripe.PaymentIntent.create(
-                amount=amount_pence,
-                currency='gbp',
+                amount=amount_pesewas,
+                currency='ghs',
                 metadata={
                     'credit_account_id': credit_account.id,
                     'user_id': request.user.id
@@ -324,15 +324,15 @@ def process_payment_success(request, payment_intent):
         account = CreditAccount.objects.get(id=credit_account_id)
         print(f"Found account: {account.id} for user: {account.user.username}")
 
-        # Convert from pence to pounds and ensure it's a Decimal
+        # Convert from pesewas to cedis and ensure it's a Decimal
         from decimal import Decimal
         amount_paid = Decimal(str(payment_intent.amount / 100))
-        print(f"Amount paid: £{amount_paid}")
+        print(f"Amount paid: ₵{amount_paid}")
 
         # Update account balance
         old_balance = account.balance
         account.balance += amount_paid
-        print(f"Updated balance from £{old_balance} to £{account.balance}")
+        print(f"Updated balance from ₵{old_balance} to ₵{account.balance}")
 
         # Create transaction record
         transaction = Transaction.objects.create(
@@ -367,7 +367,7 @@ def process_payment_success(request, payment_intent):
         account.save()
         print(f"Account saved successfully")
         messages.success(
-            request, f"Payment of £{amount_paid} processed successfully!")
+            request, f"Payment of ₵{amount_paid} processed successfully!")
 
     except CreditAccount.DoesNotExist:
         print(f"Error: CreditAccount with ID {credit_account_id} not found")
@@ -389,13 +389,13 @@ def create_checkout_session(request):
             # Get the user's credit account
             credit_account = request.user.credit_account
 
-            # Get the amount from the frontend form (in pounds)
-            amount_pounds = float(request.POST.get('amount'))
-            # Convert to cents/pence for Stripe
-            amount_pence = int(amount_pounds * 100)
+            # Get the amount from the frontend form (in cedis)
+            amount_cedis = float(request.POST.get('amount'))
+            # Convert to pesewas for Stripe
+            amount_pesewas = int(amount_cedis * 100)
 
             print(
-                f"Creating checkout session for account {credit_account.id}, amount: £{amount_pounds}")
+                f"Creating checkout session for account {credit_account.id}, amount: ₵{amount_cedis}")
 
             # Create a new Checkout Session
             checkout_session = stripe.checkout.Session.create(
@@ -403,11 +403,11 @@ def create_checkout_session(request):
                 line_items=[
                     {
                         'price_data': {
-                            'currency': 'gbp',
+                            'currency': 'ghs',
                             'product_data': {
                                 'name': f"Deposit for {credit_account.product.name}",
                             },
-                            'unit_amount': amount_pence,
+                            'unit_amount': amount_pesewas,
                         },
                         'quantity': 1,
                     }
@@ -463,11 +463,11 @@ def stripe_webhook(request):
 
         try:
             account = CreditAccount.objects.get(id=credit_account_id)
-            # Convert from pence to pounds and ensure it's a Decimal
+            # Convert from pesewas to cedis and ensure it's a Decimal
             from decimal import Decimal
             amount_paid = Decimal(str(session.get('amount_total', 0) / 100))
             print(
-                f"Processing payment of £{amount_paid} for account {account.id}")
+                f"Processing payment of ₵{amount_paid} for account {account.id}")
 
             # 1. Update the account balance
             account.balance += amount_paid

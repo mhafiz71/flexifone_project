@@ -39,7 +39,7 @@
                     <!-- Pricing -->
                     <div class="mb-6">
                         <div class="flex items-baseline mb-2">
-                            <span class="text-3xl font-bold text-gray-900">£{{ product.price }}</span>
+                            <span class="text-3xl font-bold text-gray-900">₵{{ product.price }}</span>
                             <span class="text-sm text-gray-500 ml-2">Full Price</span>
                         </div>
                         
@@ -47,11 +47,11 @@
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-gray-600">Monthly (12 months)</span>
-                                    <span class="font-semibold text-green-600">£{{ product.monthly_payment_12_months|floatformat:2 }}</span>
+                                    <span class="font-semibold text-green-600">₵{{ product.monthly_payment_12_months|floatformat:2 }}</span>
                                 </div>
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-gray-600">Monthly (6 months)</span>
-                                    <span class="font-semibold text-green-600">£{{ product.monthly_payment_6_months|floatformat:2 }}</span>
+                                    <span class="font-semibold text-green-600">₵{{ product.monthly_payment_6_months|floatformat:2 }}</span>
                                 </div>
                                 {% if product.interest_rate > 0 %}
                                     <div class="text-xs text-gray-500">

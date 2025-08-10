@@ -30,8 +30,8 @@ def process_daily_installments():
         try:
             # Create a PaymentIntent to charge the customer off-session
             payment_intent = stripe.PaymentIntent.create(
-                amount=int(account.installment_amount * 100), # Amount in pence
-                currency='gbp',
+                amount=int(account.installment_amount * 100), # Amount in pesewas
+                currency='ghs',
                 customer=account.user.stripe_customer_id,
                 # This is crucial: it finds the default payment method saved to the customer
                 payment_method=stripe.Customer.retrieve(account.user.stripe_customer_id)['invoice_settings']['default_payment_method'],

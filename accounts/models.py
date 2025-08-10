@@ -186,7 +186,7 @@ class Transaction(models.Model):
         max_length=255, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.transaction_type} of £{self.amount} for {self.account.user.username}"
+        return f"{self.transaction_type} of ₵{self.amount} for {self.account.user.username}"
 
 # 5. Credit Application model
 

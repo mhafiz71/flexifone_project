@@ -90,17 +90,17 @@
                 <div class="border-t pt-4">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-sm text-gray-600">Full Price</span>
-                        <span class="text-lg font-bold text-gray-900">£{{ product.price }}</span>
+                        <span class="text-lg font-bold text-gray-900">₵{{ product.price }}</span>
                     </div>
                     
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Monthly (12 months)</span>
-                            <span class="text-sm font-semibold text-green-600">£{{ monthly_payment_12|floatformat:2 }}</span>
+                            <span class="text-sm font-semibold text-green-600">₵{{ monthly_payment_12|floatformat:2 }}</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Monthly (6 months)</span>
-                            <span class="text-sm font-semibold text-green-600">£{{ monthly_payment_6|floatformat:2 }}</span>
+                            <span class="text-sm font-semibold text-green-600">₵{{ monthly_payment_6|floatformat:2 }}</span>
                         </div>
                     </div>
                 </div>
