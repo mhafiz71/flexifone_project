@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Available Phones - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Available Phones</h1>
+        {% if user.is_staff %}
+        <a href="{% url 'phones:phone_create' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors">
+            <i class="fas fa-plus mr-2"></i>Add New Phone
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Filter by brand -->
+    <div class="mb-8 bg-white p-4 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold mb-4">Filter by Brand</h2>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'phones:phone_list' %}" class="{% if not selected_brand %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors">
+                All
+            </a>
+            {% for brand_code, brand_name in brands %}
+            <a href="{% url 'phones:phone_list' %}?brand={{ brand_code }}" class="{% if selected_brand == brand_code %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors">
+                {{ brand_name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Phone grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for phone in page_obj %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <div class="h-48 bg-gray-200 flex items-center justify-center">
+                {% if phone.image %}
+                <img src="{{ phone.image.url }}" alt="{{ phone.name }}" class="h-full w-full object-cover">
+                {% else %}
+                <div class="text-gray-400 text-center">
+                    <i class="fas fa-mobile-alt text-5xl mb-2"></i>
+                    <p>No image available</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <h2 class="text-xl font-semibold text-gray-900 truncate">{{ phone.name }}</h2>
+                    <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-1 rounded">{{ phone.get_brand_display }}</span>
+                </div>
+                <p class="text-2xl font-bold text-green-600 mb-2">${{ phone.price }}</p>
+                <p class="text-gray-600 mb-4 line-clamp-2">{{ phone.description|truncatechars:100 }}</p>
+                <div class="flex justify-between items-center">
+                    <a href="{% url 'phones:phone_detail' phone.slug %}" class="text-green-600 hover:text-green-700 font-medium">
+                        View Details
+                        <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                    <span class="text-sm text-gray-500">
+                        {% if phone.stock > 0 %}
+                        <span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>In Stock</span>
+                        {% else %}
+                        <span class="text-red-600"><i class="fas fa-times-circle mr-1"></i>Out of Stock</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full bg-gray-100 p-8 rounded-lg text-center">
+            <i class="fas fa-search text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No phones found</h3>
+            <p class="text-gray-600">Try adjusting your filters or check back later for new arrivals.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="mt-8 flex justify-center">
+        <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+            <a href="?{% if selected_brand %}brand={{ selected_brand }}&{% endif %}page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Previous</span>
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            {% for i in page_obj.paginator.page_range %}
+                {% if page_obj.number == i %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
+                    {{ i }}
+                </span>
+                {% else %}
+                <a href="?{% if selected_brand %}brand={{ selected_brand }}&{% endif %}page={{ i }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    {{ i }}
+                </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <a href="?{% if selected_brand %}brand={{ selected_brand }}&{% endif %}page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Next</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

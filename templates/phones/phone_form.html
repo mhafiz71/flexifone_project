@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">{{ title }}</h1>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" class="p-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-md p-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-600"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Name -->
+                <div class="col-span-2 md:col-span-1">
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    {{ form.name }}
+                    {% if form.name.help_text %}
+                    <p class="mt-1 text-sm text-gray-500">{{ form.name.help_text }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Brand -->
+                <div class="col-span-2 md:col-span-1">
+                    <label for="{{ form.brand.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                    {{ form.brand }}
+                </div>
+                
+                <!-- Price -->
+                <div class="col-span-2 md:col-span-1">
+                    <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                    {{ form.price }}
+                </div>
+                
+                <!-- Stock -->
+                <div class="col-span-2 md:col-span-1">
+                    <label for="{{ form.stock.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                    {{ form.stock }}
+                </div>
+                
+                <!-- Description -->
+                <div class="col-span-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    {{ form.description }}
+                </div>
+                
+                <!-- Specifications -->
+                <div class="col-span-2">
+                    <label for="{{ form.specifications.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Specifications (JSON)</label>
+                    {{ form.specifications }}
+                    <p class="mt-1 text-sm text-gray-500">Enter specifications as a JSON object, e.g. {"processor": "A15 Bionic", "storage": "128GB"}</p>
+                </div>
+                
+                <!-- Image -->
+                <div class="col-span-2">
+                    <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                    {% if phone.image %}
+                    <div class="mb-2">
+                        <img src="{{ phone.image.url }}" alt="Current image" class="h-32 w-auto object-contain border rounded-md">
+                        <p class="text-sm text-gray-500 mt-1">Current image</p>
+                    </div>
+                    {% endif %}
+                    {{ form.image }}
+                </div>
+                
+                <!-- Is Active -->
+                <div class="col-span-2">
+                    <div class="flex items-center">
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 block text-sm font-medium text-gray-700">Active (visible to customers)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex justify-end space-x-4">
+                <a href="{% url 'phones:phone_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-2 rounded-lg shadow-md transition-all duration-200">
+                    Save Phone
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}View Documents - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Your Documents</h1>
+        <p class="text-gray-600">Access and download important documents related to your account.</p>
+    </div>
+    
+    <!-- Documents Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Account Documents</h2>
+            
+            {% if credit_account %}
+                <div class="space-y-4">
+                    <!-- Credit Agreement -->
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-file-contract text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-900">Credit Agreement</h3>
+                                <p class="text-sm text-gray-500">Your signed credit agreement from {{ credit_account.accepted_at|date:"F j, Y" }}</p>
+                            </div>
+                        </div>
+                        <a href="#" class="text-green-600 hover:text-green-700 font-medium flex items-center">
+                            <i class="fas fa-download mr-2"></i>
+                            Download
+                        </a>
+                    </div>
+                    
+                    <!-- Payment Schedule -->
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-calendar-alt text-green-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-900">Payment Schedule</h3>
+                                <p class="text-sm text-gray-500">Your monthly payment schedule and due dates</p>
+                            </div>
+                        </div>
+                        <a href="#" class="text-green-600 hover:text-green-700 font-medium flex items-center">
+                            <i class="fas fa-download mr-2"></i>
+                            Download
+                        </a>
+                    </div>
+                    
+                    <!-- Account Statement -->
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-file-invoice-dollar text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-900">Latest Account Statement</h3>
+                                <p class="text-sm text-gray-500">Your account statement for {{ credit_account.updated_at|date:"F Y" }}</p>
+                            </div>
+                        </div>
+                        <a href="#" class="text-green-600 hover:text-green-700 font-medium flex items-center">
+                            <i class="fas fa-download mr-2"></i>
+                            Download
+                        </a>
+                    </div>
+                    
+                    <!-- Tax Documents -->
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-file-invoice text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-900">Tax Documents</h3>
+                                <p class="text-sm text-gray-500">Annual interest statements for tax purposes</p>
+                            </div>
+                        </div>
+                        <a href="#" class="text-green-600 hover:text-green-700 font-medium flex items-center">
+                            <i class="fas fa-download mr-2"></i>
+                            Download
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-folder-open text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Documents Available</h3>
+                    <p class="text-gray-600 max-w-md mx-auto">You don't have any credit accounts yet. Apply for a credit plan to access account documents.</p>
+                    <a href="{% url 'phones:phone_list' %}" class="inline-block mt-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-all duration-200">
+                        <i class="fas fa-mobile-alt mr-2"></i>Browse Phones
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- General Documents -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">General Documents</h2>
+            
+            <div class="space-y-4">
+                <!-- Terms and Conditions -->
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-file-alt text-gray-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Terms and Conditions</h3>
+                            <p class="text-sm text-gray-500">General terms and conditions for using FlexiFone services</p>
+                        </div>
+                    </div>
+                    <a href="#" class="text-green-600 hover:text-green-700 font-medium flex items-center">
+                        <i class="fas fa-download mr-2"></i>
+                        Download
+                    </a>
+                </div>
+                
+                <!-- Privacy Policy -->
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-shield-alt text-gray-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Privacy Policy</h3>
+                            <p class="text-sm text-gray-500">How we collect, use, and protect your personal information</p>
+                        </div>
+                    </div>
+                    <a href="#" class="text-green-600 hover:text-green-700 font-medium flex items-center">
+                        <i class="fas fa-download mr-2"></i>
+                        Download
+                    </a>
+                </div>
+                
+                <!-- Credit Terms -->
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-credit-card text-gray-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Credit Terms</h3>
+                            <p class="text-sm text-gray-500">Detailed information about our credit plans and policies</p>
+                        </div>
+                    </div>
+                    <a href="#" class="text-green-600 hover:text-green-700 font-medium flex items-center">
+                        <i class="fas fa-download mr-2"></i>
+                        Download
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

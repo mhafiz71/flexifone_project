@@ -19,6 +19,26 @@ from .models import User
 import random
 
 
+@login_required
+def support_view(request):
+    """View for the support page"""
+    return render(request, 'support.html')
+
+
+@login_required
+def documents_view(request):
+    """View for the documents page"""
+    try:
+        credit_account = request.user.credit_account
+    except CreditAccount.DoesNotExist:
+        credit_account = None
+        
+    context = {
+        'credit_account': credit_account,
+    }
+    return render(request, 'documents.html', context)
+
+
 def login_view(request):
     # Redirect logged-in users to dashboard
     if request.user.is_authenticated:
@@ -246,7 +266,7 @@ def create_payment_intent(request):
     if request.method == 'POST':
         try:
             amount = float(request.POST.get('amount'))
-             amount_pesewas = int(amount * 100)
+            amount_pesewas = int(amount * 100)
             print(
                 f"Creating payment intent for amount: ₵{amount} ({amount_pesewas} pesewas)")
 
@@ -289,21 +309,23 @@ def payment_success_view(request):
 
             if payment_intent.status == 'succeeded':
                 print(f"Payment intent succeeded, processing payment...")
-                return process_payment_success(request, payment_intent)
+                # Process payment and redirect to dashboard
+                process_payment_success(request, payment_intent)
+                return redirect('accounts:dashboard')
             else:
                 print(
                     f"Payment intent not succeeded, status: {payment_intent.status}")
-                messages.error(
+                messages.warning(
                     request, f"Payment not completed. Status: {payment_intent.status}")
         except stripe.error.StripeError as e:
             print(f"Stripe error: {str(e)}")
-            messages.error(request, f"Stripe error: {str(e)}")
+            messages.warning(request, f"Stripe error: {str(e)}")
         except Exception as e:
             print(f"Error processing payment: {str(e)}")
-            messages.error(request, f"Error processing payment: {str(e)}")
+            messages.warning(request, f"Error processing payment: {str(e)}")
     else:
         print("No payment_intent_id provided")
-        messages.error(request, "No payment information found.")
+        messages.warning(request, "No payment information found.")
 
     return redirect('accounts:dashboard')
 
@@ -344,11 +366,20 @@ def process_payment_success(request, payment_intent):
             description=f"Payment for {account.product.name}"
         )
         print(f"Created transaction: {transaction.id}")
+        
+        # Prepare result data
+        result = {
+            'amount_paid': amount_paid,
+            'remaining_balance': max(0, account.product.price - account.balance),
+            'product_name': account.product.name,
+            'plan_completed': False
+        }
 
         # Check if account is completed
         if account.balance >= account.product.price and account.status != CreditAccount.Status.COMPLETED:
             account.status = CreditAccount.Status.COMPLETED
             print(f"Account {account.id} marked as completed")
+            result['plan_completed'] = True
 
             # Send completion email
             subject = f"Congratulations! Your plan for the {account.product.name} is complete!"
@@ -366,8 +397,15 @@ def process_payment_success(request, payment_intent):
 
         account.save()
         print(f"Account saved successfully")
-        messages.success(
-            request, f"Payment of ₵{amount_paid} processed successfully!")
+        
+        # Enhanced success message with more details
+        if account.status == CreditAccount.Status.COMPLETED:
+            messages.success(
+                request, f"Congratulations! Your payment of ₵{amount_paid} has been processed successfully. You have completed your payment plan for the {account.product.name}!")
+        else:
+            remaining = account.product.price - account.balance
+            messages.success(
+                request, f"Payment of ₵{amount_paid} processed successfully! Remaining balance: ₵{remaining:.2f}")
 
     except CreditAccount.DoesNotExist:
         print(f"Error: CreditAccount with ID {credit_account_id} not found")
@@ -591,6 +629,10 @@ def bnpl_success_view(request, account_id):
     account.next_payment_due_date = timezone.now().date() + relativedelta(months=1)
     account.save()
 
+    # Send success message
+    messages.success(
+        request, f"Your credit plan for the {account.product.name} has been set up successfully! Your first payment is due on {account.next_payment_due_date.strftime('%B %d, %Y')}.")
+
     # TODO: Send a "BNPL Plan Started" email notification
 
     return redirect('accounts:dashboard')
@@ -613,7 +655,7 @@ def create_customer_portal_session(request):
     return redirect(portal_session.url, code=303)
 
 
-@staff_member_required  # Ensures only staff members can access this view
+@staff_member_required
 def business_dashboard_view(request):
     # Calculate raw counts for charts
     active_savings_count = CreditAccount.objects.filter(
@@ -647,7 +689,11 @@ def business_dashboard_view(request):
             'bnpl_health_data': [repaying_count, overdue_count],
         }
     }
-    return render(request, 'admin/business_dashboard.html', context)
+    
+    # Show welcome message for analytics dashboard
+    messages.success(request, "Welcome to the Business Analytics Dashboard!")
+    
+    return render(request, 'business_dashboard.html', context)
 
 
 @login_required

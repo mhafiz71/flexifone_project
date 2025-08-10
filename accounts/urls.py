@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import bnpl_checkout_view, bnpl_success_view, business_dashboard_view, create_customer_portal_session, signup_view, login_view, logout_view, dashboard_view, select_product_view, agreement_view, stripe_config, create_checkout_session, stripe_webhook, credit_application_view, payment_history_view, test_webhook, webhook_test_page, embedded_payment_view, create_payment_intent, payment_success_view
+from .views import bnpl_checkout_view, bnpl_success_view, business_dashboard_view, create_customer_portal_session, signup_view, login_view, logout_view, dashboard_view, select_product_view, agreement_view, stripe_config, create_checkout_session, stripe_webhook, credit_application_view, payment_history_view, test_webhook, webhook_test_page, embedded_payment_view, create_payment_intent, payment_success_view, support_view, documents_view
 
 urlpatterns = [
     path('signup/', signup_view, name='signup'),
@@ -29,4 +29,6 @@ urlpatterns = [
     path('manage-payments/', create_customer_portal_session, name='manage_payments'),
     path('payment-history/', payment_history_view, name='payment_history'),
     path('business-dashboard/', business_dashboard_view, name='business_dashboard'),
+    path('support/', support_view, name='support'),
+    path('documents/', documents_view, name='documents'),
 ]

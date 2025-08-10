@@ -152,6 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error);
             }
             
+            // Show pending payment notification
+            notifications.payment.pending();
+            
             // Confirm payment
             const { error, paymentIntent } = await stripe.confirmCardPayment(data.client_secret, {
                 payment_method: {
@@ -165,8 +168,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (error) {
                 cardErrors.textContent = error.message;
+                notifications.payment.failed(error.message);
             } else if (paymentIntent.status === 'succeeded') {
-                // Payment successful - redirect to success page
+                // Payment successful - show success notification and redirect
+                notifications.payment.success(amount);
                 window.location.href = '{% url "accounts:payment_success" %}?payment_intent=' + paymentIntent.id;
             }
             

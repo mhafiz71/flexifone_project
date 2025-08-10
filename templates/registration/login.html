@@ -54,36 +54,37 @@
                     
                     <!-- Username/Email Field -->
                     <div>
-                        <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
                             Username or email
                         </label>
                         <input type="text" 
-                               name="{{ form.username.name }}" 
-                               id="{{ form.username.id_for_label }}"
+                               name="username" 
+                               id="username"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
                                placeholder="Enter your username or email"
-                               value="{{ form.username.value|default:'' }}"
+                               value="{{ username }}"
                                required>
-                        {% if form.username.errors %}
-                            <p class="text-red-500 text-sm mt-1">{{ form.username.errors.0 }}</p>
-                        {% endif %}
                     </div>
 
                     <!-- Password Field -->
                     <div>
-                        <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
                             Password
                         </label>
                         <input type="password" 
-                               name="{{ form.password.name }}" 
-                               id="{{ form.password.id_for_label }}"
+                               name="password" 
+                               id="password"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
                                placeholder="Enter your password"
                                required>
-                        {% if form.password.errors %}
-                            <p class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</p>
-                        {% endif %}
                     </div>
+                    
+                    <!-- Display error messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="text-red-500 text-sm mt-1">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
 
                     <!-- Forgot Password Link -->
                     <div class="text-right">

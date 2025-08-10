@@ -7,7 +7,10 @@
     <title>{% block title %}FlexiFone - Buy Phones on Credit{% endblock %}</title>
     {% tailwind_css %}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="{% static 'js/notifications.js' %}"></script>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- Navigation -->
@@ -29,6 +32,9 @@
                     {% if user.is_authenticated %}
                         <a href="{% url 'accounts:dashboard' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             <i class="fas fa-home mr-2"></i>Dashboard
+                        </a>
+                        <a href="{% url 'phones:phone_list' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-mobile-alt mr-2"></i>Phones
                         </a>
                         {% if user.is_staff %}
                             <a href="{% url 'accounts:business_dashboard' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -115,5 +121,40 @@
             </div>
         </div>
     </footer>
+    <!-- Toast Notifications Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to show toast notifications
+            function showToast(message, type) {
+                const backgroundColor = type === 'success' ? 'linear-gradient(to right, #10b981, #059669)' : 
+                                       type === 'error' ? 'linear-gradient(to right, #ef4444, #dc2626)' : 
+                                       type === 'info' ? 'linear-gradient(to right, #3b82f6, #2563eb)' : 
+                                       'linear-gradient(to right, #f59e0b, #d97706)';
+                
+                Toastify({
+                    text: message,
+                    duration: 5000,
+                    close: true,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: backgroundColor,
+                    stopOnFocus: true,
+                    className: "rounded-lg",
+                }).showToast();
+            }
+
+            // Process Django messages
+            {% if messages %}
+                {% for message in messages %}
+                    showToast("{{ message }}", "{{ message.tags }}");
+                {% endfor %}
+            {% endif %}
+
+            // Listen for custom toast events
+            document.addEventListener('showToast', function(e) {
+                showToast(e.detail.message, e.detail.type || 'info');
+            });
+        });
+    </script>
 </body>
 </html>

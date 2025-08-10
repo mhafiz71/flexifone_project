@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ phone.brand }} {{ phone.name }} - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'phones:phone_list' %}" class="text-gray-700 hover:text-green-600 transition-colors">
+                    <i class="fas fa-mobile-alt mr-2"></i>Phones
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2 text-sm"></i>
+                    <span class="text-gray-500">{{ phone.get_brand_display }}</span>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2 text-sm"></i>
+                    <span class="text-gray-500">{{ phone.name }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+    
+    <!-- Admin Actions -->
+    {% if user.is_staff %}
+    <div class="flex justify-end mb-6 space-x-4">
+        <a href="{% url 'phones:phone_update' phone.slug %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors">
+            <i class="fas fa-edit mr-2"></i>Edit
+        </a>
+        <a href="{% url 'phones:phone_delete' phone.slug %}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors">
+            <i class="fas fa-trash-alt mr-2"></i>Delete
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- Phone Details -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="md:flex">
+            <!-- Phone Image -->
+            <div class="md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
+                {% if phone.image %}
+                <img src="{{ phone.image.url }}" alt="{{ phone.name }}" class="max-h-96 object-contain">
+                {% else %}
+                <div class="text-gray-400 text-center p-12">
+                    <i class="fas fa-mobile-alt text-8xl mb-4"></i>
+                    <p class="text-xl">No image available</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Phone Info -->
+            <div class="md:w-1/2 p-8">
+                <div class="flex justify-between items-start mb-4">
+                    <h1 class="text-3xl font-bold text-gray-900">{{ phone.name }}</h1>
+                    <span class="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">
+                        {{ phone.get_brand_display }}
+                    </span>
+                </div>
+                
+                <div class="mb-6">
+                    <p class="text-4xl font-bold text-green-600">${{ phone.price }}</p>
+                    <p class="text-sm text-gray-500 mt-1">Includes taxes & shipping</p>
+                </div>
+                
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-2">Description</h2>
+                    <p class="text-gray-700">{{ phone.description }}</p>
+                </div>
+                
+                <!-- Specifications -->
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-2">Specifications</h2>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                            {% for key, value in phone.specifications.items %}
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">{{ key|title }}</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ value }}</dd>
+                            </div>
+                            {% empty %}
+                            <div class="sm:col-span-2 text-gray-500 text-sm">
+                                No specifications available
+                            </div>
+                            {% endfor %}
+                        </dl>
+                    </div>
+                </div>
+                
+                <!-- Stock Status -->
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-2">Availability</h2>
+                    {% if phone.stock > 0 %}
+                    <div class="flex items-center text-green-600">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span>In Stock ({{ phone.stock }} available)</span>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center text-red-600">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        <span>Out of Stock</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-4">
+                    {% if user.is_authenticated and not has_credit_account %}
+                        <a href="{% url 'phones:buy_on_credit' phone.slug %}" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
+                            <i class="fas fa-credit-card mr-2"></i>Buy on Credit
+                        </a>
+                    {% elif user.is_authenticated and has_credit_account %}
+                        <button disabled class="flex-1 bg-gray-400 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md cursor-not-allowed">
+                            <i class="fas fa-credit-card mr-2"></i>Already Have a Plan
+                        </button>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login to Buy
+                        </a>
+                    {% endif %}
+                    <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-3 rounded-lg transition-colors">
+                        <i class="far fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

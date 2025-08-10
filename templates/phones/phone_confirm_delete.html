@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete {{ phone.name }} - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-red-600 px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Confirm Deletion</h1>
+        </div>
+        
+        <div class="p-6">
+            <div class="flex items-center mb-6">
+                <div class="flex-shrink-0 bg-red-100 rounded-full p-3">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Are you sure?</h2>
+                    <p class="text-gray-600">This action cannot be undone.</p>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 class="text-md font-medium text-gray-900 mb-2">You are about to delete:</h3>
+                <div class="flex items-center">
+                    {% if phone.image %}
+                    <img src="{{ phone.image.url }}" alt="{{ phone.name }}" class="h-16 w-16 object-cover rounded-md mr-4">
+                    {% else %}
+                    <div class="h-16 w-16 bg-gray-200 rounded-md flex items-center justify-center mr-4">
+                        <i class="fas fa-mobile-alt text-gray-400 text-2xl"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <p class="font-semibold text-gray-900">{{ phone.name }}</p>
+                        <p class="text-sm text-gray-600">{{ phone.get_brand_display }} • ${{ phone.price }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="flex justify-end space-x-4">
+                    <a href="{% url 'phones:phone_detail' phone.slug %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow-md transition-colors">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

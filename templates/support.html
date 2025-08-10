@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Get Support - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Customer Support</h1>
+        <p class="text-gray-600">We're here to help you with any questions or issues you may have.</p>
+    </div>
+    
+    <!-- Support Options -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Contact Options</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Phone Support -->
+                <div class="bg-gray-50 p-5 rounded-lg border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-phone text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">Phone Support</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Speak directly with our customer service team.</p>
+                    <div class="bg-white p-3 rounded border border-gray-200">
+                        <p class="font-medium text-gray-900">+1 (800) 555-0123</p>
+                        <p class="text-sm text-gray-500">Mon-Fri: 8am-8pm, Sat: 9am-5pm</p>
+                    </div>
+                </div>
+                
+                <!-- Email Support -->
+                <div class="bg-gray-50 p-5 rounded-lg border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-envelope text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">Email Support</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Send us an email and we'll respond within 24 hours.</p>
+                    <div class="bg-white p-3 rounded border border-gray-200">
+                        <p class="font-medium text-gray-900">support@flexifone.com</p>
+                        <p class="text-sm text-gray-500">24/7 email support</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- FAQ Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Frequently Asked Questions</h2>
+            
+            <div class="space-y-4">
+                <!-- FAQ Item 1 -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="p-4 bg-gray-50 font-medium text-gray-900">
+                        How do I make a payment on my credit account?
+                    </div>
+                    <div class="p-4 text-gray-600">
+                        You can make payments through your dashboard by clicking on "Manage Payments" in the Quick Actions section. We accept all major credit cards and bank transfers.
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 2 -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="p-4 bg-gray-50 font-medium text-gray-900">
+                        What happens if I miss a payment?
+                    </div>
+                    <div class="p-4 text-gray-600">
+                        If you miss a payment, a late fee may be applied to your account. Multiple missed payments could affect your credit score. Please contact us immediately if you anticipate payment difficulties.
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 3 -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="p-4 bg-gray-50 font-medium text-gray-900">
+                        Can I pay off my credit account early?
+                    </div>
+                    <div class="p-4 text-gray-600">
+                        Yes, you can pay off your credit account at any time without any early repayment fees. Simply use the "Manage Payments" option to make a full payment of your remaining balance.
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 4 -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="p-4 bg-gray-50 font-medium text-gray-900">
+                        How do I update my personal information?
+                    </div>
+                    <div class="p-4 text-gray-600">
+                        You can update your personal information by going to your account settings. If you need to change critical information like your name or national ID, please contact our support team directly.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contact Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Send Us a Message</h2>
+            
+            <form class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                        <input type="text" id="name" name="name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" id="email" name="email" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                    <input type="text" id="subject" name="subject" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                </div>
+                
+                <div>
+                    <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                    <textarea id="message" name="message" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"></textarea>
+                </div>
+                
+                <div>
+                    <button type="submit" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-all duration-200">
+                        <i class="fas fa-paper-plane mr-2"></i>Send Message
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
