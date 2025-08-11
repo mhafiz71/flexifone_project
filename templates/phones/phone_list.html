@@ -3,25 +3,43 @@
 {% block title %}Available Phones - FlexiFone{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Available Phones</h1>
-        {% if user.is_staff %}
-        <a href="{% url 'phones:phone_create' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors">
-            <i class="fas fa-plus mr-2"></i>Add New Phone
-        </a>
-        {% endif %}
+<div class="space-y-8">
+    <!-- Page Header -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div
+                    class="w-16 h-16 bg-gradient-to-r from-green-600 to-green-700 rounded-2xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-mobile-alt text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900">Available Phones</h1>
+                    <p class="text-xl text-gray-600">Choose from our latest smartphone collection</p>
+                </div>
+            </div>
+            {% if user.is_staff %}
+            <a href="{% url 'phones:phone_create' %}"
+                class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg">
+                <i class="fas fa-plus mr-2"></i>Add New Phone
+            </a>
+            {% endif %}
+            </div>
     </div>
     
     <!-- Filter by brand -->
-    <div class="mb-8 bg-white p-4 rounded-lg shadow-md">
-        <h2 class="text-lg font-semibold mb-4">Filter by Brand</h2>
-        <div class="flex flex-wrap gap-2">
-            <a href="{% url 'phones:phone_list' %}" class="{% if not selected_brand %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors">
-                All
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-filter text-green-600 mr-2"></i>
+            Filter by Brand
+        </h2>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'phones:phone_list' %}"
+                class="{% if not selected_brand %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg{% else %}bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-600{% endif %} px-4 py-2 rounded-xl font-semibold transition-all duration-200">
+                All Brands
             </a>
             {% for brand_code, brand_name in brands %}
-            <a href="{% url 'phones:phone_list' %}?brand={{ brand_code }}" class="{% if selected_brand == brand_code %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors">
+            <a href="{% url 'phones:phone_list' %}?brand={{ brand_code }}"
+                class="{% if selected_brand == brand_code %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg{% else %}bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-600{% endif %} px-4 py-2 rounded-xl font-semibold transition-all duration-200">
                 {{ brand_name }}
             </a>
             {% endfor %}
@@ -29,38 +47,89 @@
     </div>
     
     <!-- Phone grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {% for phone in page_obj %}
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            <div class="h-48 bg-gray-200 flex items-center justify-center">
+        <div
+            class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:border-green-200 transition-all duration-200 transform hover:-translate-y-1">
+            <div class="h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
                 {% if phone.image %}
                 <img src="{{ phone.image.url }}" alt="{{ phone.name }}" class="h-full w-full object-cover">
                 {% else %}
                 <div class="text-gray-400 text-center">
-                    <i class="fas fa-mobile-alt text-5xl mb-2"></i>
-                    <p>No image available</p>
+                    <div class="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-mobile-alt text-3xl"></i>
+                    </div>
+                    <p class="text-sm font-medium">No image available</p>
                 </div>
                 {% endif %}
             </div>
-            <div class="p-4">
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-xl font-semibold text-gray-900 truncate">{{ phone.name }}</h2>
-                    <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-1 rounded">{{ phone.get_brand_display }}</span>
+            <div class="p-6">
+                <!-- Header with name and brand -->
+                <div class="flex justify-between items-start mb-3">
+                    <h2 class="text-xl font-bold text-gray-900 leading-tight">{{ phone.name }}</h2>
+                    <span
+                        class="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs font-semibold px-3 py-1 rounded-full">{{
+                        phone.get_brand_display }}</span>
                 </div>
-                <p class="text-2xl font-bold text-green-600 mb-2">${{ phone.price }}</p>
-                <p class="text-gray-600 mb-4 line-clamp-2">{{ phone.description|truncatechars:100 }}</p>
-                <div class="flex justify-between items-center">
-                    <a href="{% url 'phones:phone_detail' phone.slug %}" class="text-green-600 hover:text-green-700 font-medium">
-                        View Details
-                        <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
-                    <span class="text-sm text-gray-500">
-                        {% if phone.stock > 0 %}
-                        <span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>In Stock</span>
-                        {% else %}
-                        <span class="text-red-600"><i class="fas fa-times-circle mr-1"></i>Out of Stock</span>
-                        {% endif %}
+            
+                <!-- Price -->
+                <div class="mb-4">
+                    <p class="text-3xl font-bold text-green-600">₵{{ phone.price }}</p>
+                    <p class="text-sm text-gray-500">Starting price</p>
+                </div>
+                <!-- Description -->
+                <p class="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed">{{ phone.description|truncatechars:120 }}</p>
+            
+                <!-- Stock status -->
+                <div class="mb-4">
+                    {% if phone.stock > 0 %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        {{ phone.stock }} in stock
                     </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                        <i class="fas fa-times-circle mr-1"></i>
+                        Out of stock
+                    </span>
+                    {% endif %}
+                </div>
+<!-- Action buttons -->
+<div class="flex flex-col space-y-3">
+    {% if user.is_authenticated and phone.stock > 0 %}
+    <a href="{% url 'accounts:select_phone' phone.id %}"
+        class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-200 shadow-lg transform hover:-translate-y-0.5">
+        <i class="fas fa-shopping-cart mr-2"></i>
+        Select Plan
+    </a>
+    <a href="{% url 'phones:phone_detail' phone.slug %}"
+        class="w-full bg-white border-2 border-gray-200 hover:border-green-300 text-gray-700 hover:text-green-600 py-3 px-4 rounded-xl font-semibold text-center transition-all duration-200">
+        <i class="fas fa-info-circle mr-2"></i>
+        View Details
+    </a>
+    {% elif user.is_authenticated %}
+    <button disabled
+        class="w-full bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center cursor-not-allowed">
+        <i class="fas fa-ban mr-2"></i>
+        Out of Stock
+    </button>
+    <a href="{% url 'phones:phone_detail' phone.slug %}"
+        class="w-full bg-white border-2 border-gray-200 hover:border-green-300 text-gray-700 hover:text-green-600 py-3 px-4 rounded-xl font-semibold text-center transition-all duration-200">
+        <i class="fas fa-info-circle mr-2"></i>
+        View Details
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}"
+                            class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-200 shadow-lg">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Login to Select
+                        </a>
+                        <a href="{% url 'phones:phone_detail' phone.slug %}"
+                            class="w-full bg-white border-2 border-gray-200 hover:border-green-300 text-gray-700 hover:text-green-600 py-3 px-4 rounded-xl font-semibold text-center transition-all duration-200">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            View Details
+                        </a>
+                        {% endif %}
                 </div>
             </div>
         </div>

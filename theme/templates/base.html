@@ -11,39 +11,76 @@
     <script src="https://js.stripe.com/v3/"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
+    <style>
+        /* Line clamp utilities */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- Navigation -->
-    <nav class="bg-white border-b border-gray-200 shadow-sm">
+    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <a href="{% url 'accounts:dashboard' %}" class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-gradient-to-r from-green-600 to-green-700 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-mobile-alt text-white text-sm"></i>
+                    <a href="{% url 'accounts:dashboard' %}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <div
+                            class="w-10 h-10 bg-gradient-to-r from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-mobile-alt text-white text-lg"></i>
                         </div>
-                        <span class="text-xl font-bold text-gray-900">FlexiFone</span>
+                        <span class="text-2xl font-bold">
+                            <span class="text-gray-900">Flexi</span><span class="text-green-600">Fone</span>
+                        </span>
                     </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button type="button" id="mobile-menu-button"
+                        class="text-gray-700 hover:text-green-600 p-2 rounded-xl transition-colors">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
                 </div>
 
                 <!-- Navigation Links -->
                 <div class="hidden md:flex items-center space-x-8">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'accounts:dashboard' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <a href="{% url 'accounts:dashboard' %}"
+                            class="text-gray-700 hover:text-green-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
                             <i class="fas fa-home mr-2"></i>Dashboard
                         </a>
-                        <a href="{% url 'phones:phone_list' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <a href="{% url 'phones:phone_list' %}"
+                            class="text-gray-700 hover:text-green-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
                             <i class="fas fa-mobile-alt mr-2"></i>Phones
                         </a>
-                        <a href="{% url 'accounts:credit_eligibility' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                            <i class="fas fa-info-circle mr-2"></i>Credit Eligibility
+                        <a href="{% url 'accounts:credit_eligibility' %}"
+                            class="text-gray-700 hover:text-green-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
+                            <i class="fas fa-info-circle mr-2"></i>Credit Check
                         </a>
                         {% if user.is_staff %}
-                            <a href="{% url 'accounts:business_dashboard' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <a href="{% url 'accounts:business_dashboard' %}"
+                                class="text-gray-700 hover:text-green-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
                                 <i class="fas fa-chart-line mr-2"></i>Analytics
                             </a>
-                            <a href="{% url 'accounts:customer_management' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <a href="{% url 'accounts:customer_management' %}"
+                                class="text-gray-700 hover:text-green-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
                                 <i class="fas fa-users-cog mr-2"></i>Customers
                             </a>
                         {% endif %}
@@ -62,25 +99,81 @@
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </button>
                         </div>
-                        <a href="{% url 'accounts:logout' %}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <a href="{% url 'accounts:logout' %}"
+                            class="text-gray-700 hover:text-red-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-red-50">
                             <i class="fas fa-sign-out-alt mr-2"></i>Logout
                         </a>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <a href="{% url 'accounts:login' %}"
+                            class="text-gray-700 hover:text-green-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
                             <i class="fas fa-sign-in-alt mr-2"></i>Login
                         </a>
-                        <a href="{% url 'accounts:signup' %}" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md">
+                        <a href="{% url 'accounts:signup' %}"
+                            class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg">
                             <i class="fas fa-user-plus mr-2"></i>Sign Up
                         </a>
                     {% endif %}
                 </div>
             </div>
         </div>
+<!-- Mobile menu -->
+<div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200 shadow-lg">
+    <div class="px-4 py-4 space-y-2">
+        {% if user.is_authenticated %}
+        <a href="{% url 'accounts:dashboard' %}"
+            class="block text-gray-700 hover:text-green-600 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
+            <i class="fas fa-home mr-3"></i>Dashboard
+        </a>
+        <a href="{% url 'phones:phone_list' %}"
+            class="block text-gray-700 hover:text-green-600 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
+            <i class="fas fa-mobile-alt mr-3"></i>Phones
+        </a>
+        <a href="{% url 'accounts:credit_eligibility' %}"
+            class="block text-gray-700 hover:text-green-600 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
+            <i class="fas fa-info-circle mr-3"></i>Credit Check
+        </a>
+        {% if user.is_staff %}
+        <a href="{% url 'accounts:business_dashboard' %}"
+            class="block text-gray-700 hover:text-green-600 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
+            <i class="fas fa-chart-line mr-3"></i>Analytics
+        </a>
+        <a href="{% url 'accounts:customer_management' %}"
+            class="block text-gray-700 hover:text-green-600 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
+            <i class="fas fa-users-cog mr-3"></i>Customers
+        </a>
+        {% endif %}
+        <div class="border-t border-gray-200 pt-2 mt-2">
+            <div class="flex items-center px-4 py-2 text-sm text-gray-600">
+                <div
+                    class="w-8 h-8 bg-gradient-to-r from-green-600 to-green-700 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-user text-white text-xs"></i>
+                </div>
+                {{ user.username }}
+            </div>
+            <a href="{% url 'accounts:logout' %}"
+                class="block text-gray-700 hover:text-red-600 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-red-50">
+                <i class="fas fa-sign-out-alt mr-3"></i>Logout
+            </a>
+        </div>
+        {% else %}
+        <a href="{% url 'accounts:login' %}"
+            class="block text-gray-700 hover:text-green-600 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
+            <i class="fas fa-sign-in-alt mr-3"></i>Login
+        </a>
+        <a href="{% url 'accounts:signup' %}"
+            class="block bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg text-center">
+            <i class="fas fa-user-plus mr-2"></i>Sign Up
+        </a>
+        {% endif %}
+    </div>
+</div>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {% block content %}{% endblock %}
+    <main class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
     <!-- Footer -->
@@ -130,6 +223,21 @@
     <!-- Toast Notifications Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function () {
+                    mobileMenu.classList.toggle('hidden');
+                    const icon = mobileMenuButton.querySelector('i');
+                    if (mobileMenu.classList.contains('hidden')) {
+                        icon.className = 'fas fa-bars text-xl';
+                    } else {
+                        icon.className = 'fas fa-times text-xl';
+                    }
+                });
+            }
             // Function to show toast notifications
             function showToast(message, type) {
                 const backgroundColor = type === 'success' ? 'linear-gradient(to right, #10b981, #059669)' : 
