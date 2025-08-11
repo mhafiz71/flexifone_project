@@ -1,17 +1,18 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import bnpl_checkout_view, bnpl_success_view, business_dashboard_view, create_customer_portal_session, signup_view, login_view, logout_view, dashboard_view, select_product_view, agreement_view, stripe_config, create_checkout_session, stripe_webhook, credit_application_view, payment_history_view, test_webhook, webhook_test_page, embedded_payment_view, create_payment_intent, payment_success_view, support_view, documents_view
+from .views import bnpl_checkout_view, bnpl_success_view, business_dashboard_view, cancel_plan_view, create_customer_portal_session, signup_view, login_view, logout_view, dashboard_view, select_phone_view, agreement_view, stripe_config, create_checkout_session, stripe_webhook, credit_application_view, payment_history_view, test_webhook, webhook_test_page, embedded_payment_view, create_payment_intent, payment_success_view, support_view, documents_view, customer_management_view, approve_account_view, decline_account_view, verify_user_view, account_detail_view, update_account_settings_view, credit_eligibility_view
 
 urlpatterns = [
     path('signup/', signup_view, name='signup'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
     path('dashboard/', dashboard_view, name='dashboard'),
-    path('select-product/<int:product_id>/',
-         select_product_view, name='select_product'),
+    path('select-phone/<int:phone_id>/',
+         select_phone_view, name='select_phone'),
     path('agreement/<int:account_id>/', agreement_view, name='agreement'),
-    path('credit-application/<int:product_id>/',
+    path('credit-application/<int:phone_id>/',
          credit_application_view, name='credit_application'),
+    path('credit-eligibility/', credit_eligibility_view, name='credit_eligibility'),
     path('config/', stripe_config, name='stripe_config'),
     path('create-checkout-session/', create_checkout_session,
          name='create_checkout_session'),
@@ -22,13 +23,20 @@ urlpatterns = [
     path('create-payment-intent/', create_payment_intent,
          name='create_payment_intent'),
     path('payment-success/', payment_success_view, name='payment_success'),
-    path('bnpl-checkout/<int:product_id>/',
+    path('bnpl-checkout/<int:phone_id>/',
          bnpl_checkout_view, name='bnpl_checkout'),
     path('bnpl-success/<int:account_id>/',
          bnpl_success_view, name='bnpl_success'),
     path('manage-payments/', create_customer_portal_session, name='manage_payments'),
     path('payment-history/', payment_history_view, name='payment_history'),
     path('business-dashboard/', business_dashboard_view, name='business_dashboard'),
+    path('customer-management/', customer_management_view, name='customer_management'),
+    path('account-detail/<int:account_id>/', account_detail_view, name='account_detail'),
+    path('approve-account/<int:account_id>/', approve_account_view, name='approve_account'),
+    path('decline-account/<int:account_id>/', decline_account_view, name='decline_account'),
+    path('verify-user/<int:user_id>/', verify_user_view, name='verify_user'),
+    path('update-account-settings/', update_account_settings_view, name='update_account_settings'),
     path('support/', support_view, name='support'),
     path('documents/', documents_view, name='documents'),
+    path('cancel-plan/', cancel_plan_view, name='cancel_plan'),
 ]

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Credit Eligibility - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Credit Eligibility</h1>
+        <p class="text-lg text-gray-600">Understanding how our credit system works</p>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+        <div class="p-8">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-6">How Credit Eligibility Works</h2>
+            
+            <div class="prose max-w-none">
+                <p>At FlexiFone, we believe in making technology accessible to everyone through flexible payment options. Our credit system is designed to be transparent and fair.</p>
+                
+                <h3 class="text-xl font-semibold mt-6 mb-4">Basic Requirements</h3>
+                <ul class="space-y-2">
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                        <span><strong>Account Verification:</strong> Your account must be verified by our team to ensure security.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                        <span><strong>Minimum Credit Score:</strong> A credit score of at least 600 is required.</span>
+                    </li>
+                </ul>
+                
+                <h3 class="text-xl font-semibold mt-6 mb-4">Credit Assessment Factors</h3>
+                <p>When you apply for credit, we evaluate several factors to determine your eligibility:</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-gray-900 mb-2">Credit Score</h4>
+                        <p class="text-gray-700">Your credit score reflects your credit history and payment behavior. A higher score increases your chances of approval.</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-gray-900 mb-2">Income Verification</h4>
+                        <p class="text-gray-700">We assess your monthly income to ensure you can comfortably manage the installment payments.</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-gray-900 mb-2">Debt-to-Income Ratio</h4>
+                        <p class="text-gray-700">We look at your existing financial obligations compared to your income to ensure responsible lending.</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-gray-900 mb-2">Employment Status</h4>
+                        <p class="text-gray-700">Stable employment helps demonstrate your ability to make regular payments.</p>
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-semibold mt-6 mb-4">Credit Score Calculation</h3>
+                <p>Our credit scoring system takes into account:</p>
+                
+                <ul class="space-y-2">
+                    <li class="flex items-start">
+                        <i class="fas fa-chart-line text-blue-500 mt-1 mr-2"></i>
+                        <span><strong>Base Score (40%):</strong> Your existing credit score</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-chart-line text-blue-500 mt-1 mr-2"></i>
+                        <span><strong>Income Score (30%):</strong> Based on your monthly income</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-chart-line text-blue-500 mt-1 mr-2"></i>
+                        <span><strong>Debt-to-Income Score (30%):</strong> Lower debt-to-income ratios receive higher scores</span>
+                    </li>
+                </ul>
+                
+                <div class="bg-blue-50 p-6 rounded-lg mt-6">
+                    <h4 class="font-semibold text-gray-900 mb-2">Approval Criteria</h4>
+                    <p class="mb-4">To be approved for credit, you need:</p>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                            <span>A final credit score of at least 650</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                            <span>A debt-to-income ratio of 50% or less</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <h3 class="text-xl font-semibold mt-6 mb-4">Improving Your Eligibility</h3>
+                <p>If you're not currently eligible for credit, here are some ways to improve your chances:</p>
+                
+                <ul class="space-y-2">
+                    <li class="flex items-start">
+                        <i class="fas fa-arrow-up text-purple-500 mt-1 mr-2"></i>
+                        <span>Complete your account verification</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-arrow-up text-purple-500 mt-1 mr-2"></i>
+                        <span>Improve your credit score by paying bills on time</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-arrow-up text-purple-500 mt-1 mr-2"></i>
+                        <span>Reduce existing debt to improve your debt-to-income ratio</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-arrow-up text-purple-500 mt-1 mr-2"></i>
+                        <span>Ensure your income information is up-to-date</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Call to Action -->
+    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-md p-8 text-white text-center">
+        <h2 class="text-2xl font-bold mb-4">Ready to explore your options?</h2>
+        <p class="mb-6">Browse our collection of phones and see what's available for you.</p>
+        <a href="{% url 'phones:phone_list' %}" class="inline-block bg-white text-indigo-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+            View Available Phones
+        </a>
+    </div>
+</div>
+{% endblock %}

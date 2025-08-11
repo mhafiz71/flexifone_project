@@ -1,7 +1,7 @@
 # accounts/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Product, CreditAccount, Transaction
+from .models import User, CreditAccount, Transaction
 from django.utils.html import format_html
 
 
@@ -31,9 +31,9 @@ class TransactionInline(admin.TabularInline):
 
 @admin.register(CreditAccount)
 class CreditAccountAdmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'balance', 'remaining_balance',
+    list_display = ('user', 'phone', 'balance', 'remaining_balance',
                     'progress_percentage', 'status', 'accepted_terms')  # Add progress_percentage
-    list_filter = ('status', 'product', 'accepted_terms')
+    list_filter = ('status', 'phone', 'accepted_terms')
     search_fields = ('user__username', 'user__email', 'user__national_id')
     inlines = [TransactionInline]
     # Add it here too for the detail view
@@ -59,5 +59,4 @@ class CreditAccountAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User, CustomUserAdmin)
-admin.site.register(Product)
 admin.site.register(Transaction)

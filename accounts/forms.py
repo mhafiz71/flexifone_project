@@ -93,7 +93,8 @@ class CreditApplicationForm(forms.ModelForm):
                 raise forms.ValidationError("Monthly expenses cannot be greater than or equal to monthly income.")
             
             # Calculate debt-to-income ratio
-            debt_to_income = (monthly_expenses / monthly_income) * 100
+            # Convert Decimal to float for calculation
+            debt_to_income = (float(monthly_expenses) / float(monthly_income)) * 100
             if debt_to_income > 50:
                 raise forms.ValidationError("Your debt-to-income ratio is too high for credit approval.")
         

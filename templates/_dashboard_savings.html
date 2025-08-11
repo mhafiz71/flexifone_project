@@ -4,7 +4,8 @@
     <div class="flex items-center justify-between mb-8">
         <div>
             <h2 class="text-2xl font-bold text-gray-900 mb-2">Your Savings Plan</h2>
-            <p class="text-gray-600">{{ credit_account.product.brand }} {{ credit_account.product.name }}</p>
+            <p class="text-gray-600">{{ credit_account.phone.brand|default:"Unknown" }} {{ credit_account.phone.name|default:"Phone"
+                }}</p>
         </div>
         <div class="flex items-center space-x-3">
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -71,7 +72,7 @@
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-600">Total Price</p>
-                    <p class="text-2xl font-bold text-gray-900">₵{{ credit_account.product.price }}</p>
+                    <p class="text-2xl font-bold text-gray-900">₵{{ credit_account.phone.price|default:"0" }}</p>
                 </div>
             </div>
         </div>
@@ -111,6 +112,11 @@
                    class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center">
                     <i class="fas fa-credit-card mr-2"></i>
                     Make Payment
+                </a>
+                <a href="{% url 'accounts:cancel_plan' %}"
+                    class="w-full bg-white border border-red-500 text-red-600 py-3 px-4 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 flex items-center justify-center">
+                    <i class="fas fa-times-circle mr-2"></i>
+                    Cancel Plan & Choose Another
                 </a>
                 <p class="text-xs text-gray-500 text-center">
                     Secure payment processing with Stripe

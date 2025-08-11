@@ -1,0 +1,177 @@
+<!-- templates/_dashboard_completed.html -->
+<div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-sm border border-green-200 p-8">
+    <!-- Celebration Header -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mb-4">
+            <i class="fas fa-trophy text-white text-3xl"></i>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">🎉 Plan Completed!</h2>
+        <p class="text-lg text-gray-600">{{ credit_account.phone.brand|default:"Unknown" }} {{ credit_account.phone.name|default:"Phone" }}</p>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Completion Status -->
+        <div class="bg-white rounded-xl p-6 text-center border border-green-200">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">Plan Complete</h3>
+            <p class="text-sm text-gray-600">{{ credit_account.completed_at|date:"M d, Y" }}</p>
+        </div>
+
+        <!-- Payment Status -->
+        <div class="bg-white rounded-xl p-6 text-center border border-green-200">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-credit-card text-blue-600 text-xl"></i>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">Fully Paid</h3>
+            <p class="text-sm text-gray-600">₵{{ credit_account.balance }}</p>
+        </div>
+
+        <!-- Device Status -->
+        <div class="bg-white rounded-xl p-6 text-center border border-green-200">
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                {% if credit_account.status == 'PICKED_UP' %}
+                    <i class="fas fa-user-check text-purple-600 text-xl"></i>
+                {% elif credit_account.status == 'DELIVERED' %}
+                    <i class="fas fa-store text-purple-600 text-xl"></i>
+                {% else %}
+                    <i class="fas fa-clock text-purple-600 text-xl"></i>
+                {% endif %}
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">
+                {% if credit_account.status == 'PICKED_UP' %}
+                    Picked Up
+                {% elif credit_account.status == 'DELIVERED' %}
+                    Ready for Pickup
+                {% else %}
+                    Processing
+                {% endif %}
+            </h3>
+            <p class="text-sm text-gray-600">
+                {% if credit_account.status == 'PICKED_UP' %}
+                    Device collected
+                {% elif credit_account.status == 'DELIVERED' %}
+                    Visit our store
+                {% else %}
+                    Please wait
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if credit_account.status == 'DELIVERED' %}
+    <!-- Pickup Information -->
+    <div class="bg-white rounded-xl border border-orange-200 p-6 mb-8">
+        <div class="flex items-start space-x-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-map-marker-alt text-orange-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">📍 Pickup Information</h3>
+                <div class="space-y-2 text-sm text-gray-600">
+                    <p><strong>Location:</strong> {{ credit_account.pickup_location }}</p>
+                    <p><strong>Hours:</strong> Monday - Saturday, 9:00 AM - 6:00 PM</p>
+                    <p><strong>Contact:</strong> +233 XX XXX XXXX</p>
+                </div>
+                
+                <div class="mt-4 p-4 bg-orange-50 rounded-lg">
+                    <h4 class="font-medium text-orange-800 mb-2">📋 What to bring:</h4>
+                    <ul class="text-sm text-orange-700 space-y-1">
+                        <li>• Valid ID (National ID or Passport)</li>
+                        <li>• Email confirmation</li>
+                        <li>• Your FlexiFone account details</li>
+                    </ul>
+                </div>
+
+                {% if credit_account.pickup_instructions %}
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <h4 class="font-medium text-blue-800 mb-2">📝 Special Instructions:</h4>
+                    <p class="text-sm text-blue-700">{{ credit_account.pickup_instructions }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Achievement Summary -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-chart-line text-green-600 mr-2"></i>
+            Your Achievement
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600">100%</div>
+                <div class="text-sm text-gray-600">Progress</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600">₵{{ credit_account.balance }}</div>
+                <div class="text-sm text-gray-600">Total Saved</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600">
+                    {{ credit_account.created_at|timesince }}
+                </div>
+                <div class="text-sm text-gray-600">Duration</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-orange-600">
+                    {% if credit_account.account_type == 'SAVINGS' %}Save-to-Own{% else %}Credit{% endif %}
+                </div>
+                <div class="text-sm text-gray-600">Plan Type</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4">
+        {% if credit_account.status == 'PICKED_UP' %}
+            <!-- User has picked up device, show new plan option -->
+            <a href="{% url 'phones:phone_list' %}" 
+               class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg text-center">
+                <i class="fas fa-mobile-alt mr-2"></i>
+                Choose Your Next Phone
+            </a>
+            <a href="{% url 'accounts:account_detail' credit_account.id %}" 
+               class="flex-1 bg-white border border-gray-300 text-gray-700 py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 transition-colors text-center">
+                <i class="fas fa-history mr-2"></i>
+                View Plan History
+            </a>
+        {% elif credit_account.status == 'DELIVERED' %}
+            <!-- Device ready for pickup -->
+            <div class="flex-1 bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 px-6 rounded-xl font-semibold text-center">
+                <i class="fas fa-store mr-2"></i>
+                Visit Store to Collect Device
+            </div>
+            <a href="{% url 'accounts:account_detail' credit_account.id %}" 
+               class="flex-1 bg-white border border-gray-300 text-gray-700 py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 transition-colors text-center">
+                <i class="fas fa-info-circle mr-2"></i>
+                View Details
+            </a>
+        {% else %}
+            <!-- Plan completed but not yet ready for pickup -->
+            <div class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-xl font-semibold text-center">
+                <i class="fas fa-clock mr-2"></i>
+                Processing Your Order
+            </div>
+            <a href="{% url 'accounts:account_detail' credit_account.id %}" 
+               class="flex-1 bg-white border border-gray-300 text-gray-700 py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 transition-colors text-center">
+                <i class="fas fa-info-circle mr-2"></i>
+                View Details
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Congratulations Message -->
+    <div class="mt-8 text-center">
+        <p class="text-gray-600">
+            🌟 <strong>Congratulations on completing your FlexiFone plan!</strong> 🌟
+        </p>
+        <p class="text-sm text-gray-500 mt-2">
+            Thank you for choosing FlexiFone. We hope you enjoy your new device!
+        </p>
+    </div>
+</div>

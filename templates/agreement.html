@@ -1,32 +1,243 @@
 {% extends 'base.html' %}
-{% block title %}Plan Agreement{% endblock %}
+{% block title %}Plan Agreement - FlexiFone{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
-    <h2 class="text-2xl font-bold text-center mb-4">Your FlexiFone Plan Agreement</h2>
-    <p class="text-center text-gray-600 mb-6">Please review and accept the terms for your <strong>{{ account.product.name }}</strong> plan.</p>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <div class="prose prose-sm border rounded-md p-4 max-h-64 overflow-y-auto">
-        <h4>1. Introduction</h4>
-        <p>This is a "Save-to-Own" agreement. You are making incremental deposits towards the full purchase price of the product. The product remains the property of FlexiFone until the full amount of ₵{{ account.product.price }} is paid.</p>
-        <h4>2. Payments</h4>
-        <p>You can make payments of any amount at any time. All payments are non-refundable but will be credited towards your account balance.</p>
-        <h4>3. Completion</h4>
-        <p>Once your balance reaches the full product price, we will notify you and arrange for the dispatch or collection of your new device.</p>
-        <h4>4. Data Privacy</h4>
-        <p>We will handle your personal data in accordance with our privacy policy...</p>
-        <p><em>(This is placeholder text. A real agreement would be much more detailed and legally reviewed.)</em></p>
-    </div>
-
-    <form method="post" class="mt-6">
-        {% csrf_token %}
-        <div class="flex items-center">
-            <input id="terms" name="terms" type="checkbox" required class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-            <label for="terms" class="ml-2 block text-sm text-gray-900">
-              I have read and agree to the terms and conditions.
-            </label>
+        <!-- Header Section -->
+        <div class="text-center mb-8">
+            <div
+                class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mb-4">
+                <i class="fas fa-file-contract text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Plan Agreement</h1>
+            <p class="text-lg text-gray-600">Review and accept the terms for your FlexiFone plan</p>
         </div>
-        <button type="submit" class="mt-6 w-full bg-green-600 text-white rounded-md py-2 hover:bg-green-700">Accept and Start My Plan</button>
-    </form>
+
+        <!-- Plan Summary Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-mobile-alt text-indigo-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ account.phone.name|default:"Unknown Phone" }}
+                        </h3>
+                        <p class="text-sm text-gray-600">{{ account.phone.brand|default:"Unknown Brand" }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-gray-900">₵{{ account.phone.price|default:"0" }}</p>
+                    <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                        {% if account.account_type == 'SAVINGS' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                        <i
+                            class="fas {% if account.account_type == 'SAVINGS' %}fa-piggy-bank{% else %}fa-credit-card{% endif %} mr-2"></i>
+                        {% if account.account_type == 'SAVINGS' %}Save-to-Own{% else %}Buy Now, Pay Later{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agreement Content -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Agreement Header -->
+            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">Terms and Conditions</h2>
+                <p class="text-sm text-gray-600 mt-1">Please read carefully before proceeding</p>
+            </div>
+
+            <!-- Agreement Body -->
+            <div class="p-6">
+                <div class="space-y-6">
+
+                    <!-- Section 1: Introduction -->
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                            <span
+                                class="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+                            Agreement Type
+                        </h3>
+                        {% if account.account_type == 'SAVINGS' %}
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <p class="text-gray-700 leading-relaxed">
+                                This is a <strong>"Save-to-Own"</strong> agreement. You will make incremental deposits
+                                towards the full purchase price of
+                                <strong>₵{{ account.phone.price|default:"0" }}</strong>. The device remains the property
+                                of FlexiFone until the full amount is paid.
+                            </p>
+                        </div>
+                        {% else %}
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <p class="text-gray-700 leading-relaxed">
+                                This is a <strong>"Buy Now, Pay Later"</strong> agreement. You will receive the device
+                                immediately and make monthly payments
+                                according to the agreed schedule. The device becomes your property immediately, but you
+                                are obligated to make all required payments.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Section 2: Payment Terms -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                            <span
+                                class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+                            Payment Terms
+                        </h3>
+                        {% if account.account_type == 'SAVINGS' %}
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                <p class="text-gray-700">You can make payments of any amount at any time through our
+                                    secure payment system.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                <p class="text-gray-700">All payments are non-refundable but will be credited towards
+                                    your account balance.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                <p class="text-gray-700">No interest charges apply to Save-to-Own plans.</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                <p class="text-gray-700">Monthly payments will be automatically charged to your selected
+                                    payment method.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-exclamation-triangle text-yellow-500 mt-1"></i>
+                                <p class="text-gray-700">Late payments may incur additional fees and affect your credit
+                                    score.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+                                <p class="text-gray-700">Interest rates and payment schedules are determined based on
+                                    your credit assessment.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Section 3: Completion -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                            <span
+                                class="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
+                            Plan Completion
+                        </h3>
+                        {% if account.account_type == 'SAVINGS' %}
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <p class="text-gray-700 leading-relaxed">
+                                Once your balance reaches the full device price, we will notify you via email and SMS.
+                                You can then choose to have your device delivered or arrange for collection at our
+                                nearest location.
+                            </p>
+                        </div>
+                        {% else %}
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <p class="text-gray-700 leading-relaxed">
+                                Once all scheduled payments are completed, your obligation under this agreement will be
+                                fulfilled.
+                                The device will remain fully yours with no further payment obligations.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Section 4: Privacy & Security -->
+                    <div class="border-l-4 border-gray-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                            <span
+                                class="w-8 h-8 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
+                            Privacy & Security
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-shield-alt text-green-500 mt-1"></i>
+                                <p class="text-gray-700">Your personal and financial data is protected with bank-level
+                                    encryption.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-user-shield text-green-500 mt-1"></i>
+                                <p class="text-gray-700">We handle your data in accordance with our privacy policy and
+                                    applicable data protection laws.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-lock text-green-500 mt-1"></i>
+                                <p class="text-gray-700">Payment processing is handled through secure, PCI-compliant
+                                    payment gateways.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Important Notice -->
+                <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mt-1"></i>
+                        <div>
+                            <h4 class="font-semibold text-yellow-800">Important Notice</h4>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                This is a simplified agreement for demonstration purposes. In a production environment,
+                                this would include comprehensive legal terms reviewed by qualified legal professionals.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agreement Footer -->
+            <div class="bg-gray-50 px-6 py-6 border-t border-gray-200">
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+
+                    <!-- Checkbox Agreement -->
+                    <div class="flex items-start space-x-3">
+                        <input id="terms" name="terms" type="checkbox" required
+                               class="mt-1 h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <label for="terms" class="text-sm text-gray-700 leading-relaxed">
+                            I have carefully read and understood all the terms and conditions outlined above.
+                            I agree to be bound by these terms and authorize FlexiFone to process my plan according to the specified conditions.
+                        </label>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <a href="{% url 'accounts:dashboard' %}"
+                           class="flex-1 bg-white border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-center">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Cancel
+                        </a>
+                        <button type="submit"
+                                class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg">
+                            <i class="fas fa-check mr-2"></i>
+                            Accept & Start My Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="mt-8 text-center">
+            <p class="text-sm text-gray-600">
+                Have questions about this agreement?
+                <a href="{% url 'accounts:support' %}" class="text-green-600 hover:text-green-700 font-medium">
+                    Contact our support team
+                </a>
+            </p>
+        </div>
+
+    </div>
 </div>
 {% endblock %}

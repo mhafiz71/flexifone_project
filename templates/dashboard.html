@@ -1,31 +1,23 @@
 {% extends 'base.html' %}
+{% load account_extras %}
 
 {% block title %}Dashboard - FlexiFone{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
     <!-- Welcome Header -->
-    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold mb-2">Welcome back, {{ user.first_name|default:user.username }}!</h1>
-                <p class="text-indigo-100 text-lg">Ready to upgrade your phone? Choose from our latest models with flexible credit options.</p>
-            </div>
-            <div class="hidden md:block">
-                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <i class="fas fa-mobile-alt text-2xl"></i>
-                </div>
-            </div>
-        </div>
+    <div class="text-center">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome back, {{ user.first_name|default:user.username }}!</h1>
+        <p class="text-xl text-gray-600">Manage your FlexiFone account and track your progress</p>
     </div>
 
     <!-- Quick Stats -->
     {% if credit_account %}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-credit-card text-green-600 text-xl"></i>
+                    <i class="fas fa-wallet text-green-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600">Current Balance</p>
@@ -34,6 +26,17 @@
             </div>
         </div>
         
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-target text-red-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Remaining</p>
+                    <p class="text-2xl font-bold text-gray-900">₵{{ credit_account.remaining_balance }}</p>
+                </div>
+            </div>
+        </div>
         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -71,7 +74,9 @@
         <!-- Left Column - Account Status -->
         <div class="lg:col-span-2 space-y-6">
             {% if credit_account %}
-                {% if credit_account.account_type == 'CREDIT' %}
+                {% if credit_account.status|is_completed_status %}
+                {% include '_dashboard_completed.html' %}
+                {% elif credit_account.account_type == 'CREDIT' %}
                     {% include '_dashboard_bnpl.html' %}
                 {% else %}
                     {% include '_dashboard_savings.html' %}
@@ -88,35 +93,37 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Account Status</h3>
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Verification</span>
-                        <span class="flex items-center">
-                            {% if user.is_verified %}
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span class="text-sm font-medium text-green-600">Verified</span>
+                        <span class="text-sm text-gray-600">Verification Status</span>
+                        {% if user.is_verified %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Verified
+                            </span>
                             {% else %}
-                                <i class="fas fa-clock text-yellow-500 mr-2"></i>
-                                <span class="text-sm font-medium text-yellow-600">Pending</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-clock mr-1"></i>
+                                Pending
+                            </span>
                             {% endif %}
-                        </span>
                     </div>
-                    
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-600">Credit Score</span>
-                        <span class="text-sm font-medium text-gray-900">{{ user.credit_score|default:"--" }}</span>
+                        <span class="text-sm font-medium text-gray-900">{{ user.credit_score }}/850</span>
                     </div>
-                    
+                    {% if credit_account %}
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Credit Eligible</span>
-                        <span class="flex items-center">
-                            {% if user.is_eligible_for_credit %}
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span class="text-sm font-medium text-green-600">Yes</span>
-                            {% else %}
-                                <i class="fas fa-times-circle text-red-500 mr-2"></i>
-                                <span class="text-sm font-medium text-red-600">No</span>
-                            {% endif %}
+                        <span class="text-sm text-gray-600">Plan Status</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                                                            {% if credit_account.status == 'ACTIVE' %}bg-green-100 text-green-800
+                                                                            {% elif credit_account.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                                                                            {% elif credit_account.status == 'COMPLETED' %}bg-blue-100 text-blue-800
+                                                                            {% elif credit_account.status == 'DELIVERED' %}bg-purple-100 text-purple-800
+                                                                            {% elif credit_account.status == 'PICKED_UP' %}bg-gray-100 text-gray-800
+                                                                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ credit_account.get_status_display }}
                         </span>
                     </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -124,47 +131,60 @@
             <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div class="space-y-3">
-                    {% if credit_account %}
-                        <a href="{% url 'accounts:manage_payments' %}" class="flex items-center p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <i class="fas fa-credit-card text-green-600 mr-3"></i>
-                            <span class="text-sm font-medium text-gray-900">Manage Payments</span>
+                    {% if not credit_account %}
+                    <a href="{% url 'phones:phone_list' %}"
+                        class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-mobile-alt mr-2"></i>
+                        Choose a Phone Plan
                         </a>
-                        
-                        <a href="{% url 'accounts:payment_history' %}" class="flex items-center p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <i class="fas fa-history text-green-600 mr-3"></i>
-                            <span class="text-sm font-medium text-gray-900">Payment History</span>
+                    {% elif credit_account.status|is_completed_status %}
+                    {% if credit_account.status == 'PICKED_UP' %}
+                    <a href="{% url 'phones:phone_list' %}"
+                        class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-mobile-alt mr-2"></i>
+                        Choose Your Next Phone
+                    </a>
+                    {% endif %}
+                    {% else %}
+                    <a href="{% url 'accounts:embedded_payment' %}"
+                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-credit-card mr-2"></i>
+                        Make Payment
                         </a>
                     {% endif %}
                     
-                    <a href="{% url 'accounts:support' %}" class="flex items-center p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-headset text-green-600 mr-3"></i>
-                        <span class="text-sm font-medium text-gray-900">Get Support</span>
+                    <a href="{% url 'accounts:payment_history' %}"
+                        class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center">
+                        <i class="fas fa-history mr-2"></i>
+                        Payment History
                     </a>
                     
-                    <a href="{% url 'accounts:documents' %}" class="flex items-center p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-file-alt text-green-600 mr-3"></i>
-                        <span class="text-sm font-medium text-gray-900">View Documents</span>
+                    {% if credit_account %}
+                    <a href="{% url 'accounts:account_detail' credit_account.id %}"
+                        class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Account Details
                     </a>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- Recent Transactions -->
-            {% if transactions %}
+            <!-- Support -->
             <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Need Help?</h3>
                 <div class="space-y-3">
-                    {% for transaction in transactions|slice:":5" %}
-                    <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">{{ transaction.transaction_type }}</p>
-                            <p class="text-xs text-gray-500">{{ transaction.timestamp|date:"M d, Y" }}</p>
-                        </div>
-                        <span class="text-sm font-semibold text-green-600">+₵{{ transaction.amount }}</span>
-                    </div>
-                    {% endfor %}
+                    <a href="{% url 'accounts:support' %}"
+                        class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center">
+                        <i class="fas fa-headset mr-2"></i>
+                        Contact Support
+                    </a>
+                    <a href="#"
+                        class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center">
+                        <i class="fas fa-question-circle mr-2"></i>
+                        FAQ
+                    </a>
                 </div>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>

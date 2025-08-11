@@ -18,12 +18,23 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import redirect
+
+
+def home_view(request):
+    """Redirect to dashboard if logged in, otherwise to login"""
+    if request.user.is_authenticated:
+        return redirect('accounts:dashboard')
+    else:
+        return redirect('accounts:login')
+
 
 urlpatterns = [
+    path('', home_view, name='home'),
     path('admin/', admin.site.urls),
     path('accounts/', include(('accounts.urls', 'accounts'), namespace='accounts')),
-    path('phones/', include('phones.urls')),
-    path("__reload__/", include("django_browser_reload.urls")), 
+    path('phones/', include(('phones.urls', 'phones'), namespace='phones')),
+    path("__reload__/", include("django_browser_reload.urls")),
 ]
 
 # Serve media files in development

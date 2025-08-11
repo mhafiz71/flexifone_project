@@ -10,4 +10,5 @@ urlpatterns = [
     path('<slug:slug>/update/', views.phone_update, name='phone_update'),
     path('<slug:slug>/delete/', views.phone_delete, name='phone_delete'),
     path('<slug:slug>/buy-on-credit/', views.buy_on_credit, name='buy_on_credit'),
+    path('<slug:slug>/save-to-own/', views.save_to_own, name='save_to_own'),
 ]

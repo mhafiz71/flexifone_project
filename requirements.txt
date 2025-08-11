@@ -1,0 +1,37 @@
+# Core Django framework
+Django==5.2.5
+
+# Django extensions and utilities
+django-apscheduler==0.7.0
+django-browser-reload==1.18.0
+django-tailwind==4.2.0
+
+# Image processing
+Pillow==11.3.0
+
+# Payment processing
+stripe==12.4.0
+
+# Date/time utilities
+python-dateutil==2.9.0.post0
+
+# Environment variable management
+python-decouple==3.8
+
+# HTTP requests
+requests==2.32.4
+
+# Background job scheduling
+APScheduler==3.11.0
+
+# Core Python dependencies (usually auto-installed)
+asgiref==3.9.1
+certifi==2025.8.3
+charset-normalizer==3.4.2
+idna==3.10
+six==1.17.0
+sqlparse==0.5.3
+typing_extensions==4.14.1
+tzdata==2025.2
+tzlocal==5.3.1
+urllib3==2.5.0

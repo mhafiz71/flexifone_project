@@ -1,11 +1,33 @@
 Hi {{ user.username }},
 
-CONGRATULATIONS!
+🎉 CONGRATULATIONS! Your FlexiFone plan is complete! 🎉
 
-You have successfully paid the full amount for your {{ account.product.name }}.
+You have successfully paid the full amount for your {{ account.phone.name|default:"phone" }}.
 
-Our team will now begin processing your order for dispatch. You will receive a separate notification with tracking details within the next 48 hours.
+📍 PICKUP INFORMATION:
+Your device is now ready for pickup at:
 
-Thank you for choosing FlexiFone!
+{{ account.pickup_location }}
 
-- The FlexiFone Team
+📅 Pickup Hours: Monday - Saturday, 9:00 AM - 6:00 PM
+📞 Contact: +233 XX XXX XXXX
+
+📋 What to bring:
+- Valid ID (National ID or Passport)
+- This email confirmation
+- Your FlexiFone account details
+
+{% if account.pickup_instructions %}
+📝 Special Instructions:
+{{ account.pickup_instructions }}
+{% endif %}
+
+Thank you for choosing FlexiFone! We're excited for you to enjoy your new device.
+
+🌟 Completed another plan? You can now select a new phone and start another FlexiFone plan!
+
+Best regards,
+The FlexiFone Team
+
+---
+This is an automated message. Please do not reply to this email.

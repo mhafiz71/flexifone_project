@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-e6df#xa&r=)5-!+)4evs(uyyuyfhf(+@@^6^^ww5@+lnmu)lx3'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-e6df#xa&r=)5-!+)4evs(uyyuyfhf(+@@^6^^ww5@+lnmu)lx3')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 
 # Application definition
@@ -79,16 +80,30 @@ TEMPLATES = [
 ]
 
 TAILWIND_APP_NAME = 'theme'
-NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
+NPM_BIN_PATH = config('NPM_BIN_PATH', default=r"C:\Program Files\nodejs\npm.cmd")
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-STRIPE_PUBLISHABLE_KEY = 'pk_test_51RklocR5uhyPVyuv4nWyoHapJiJCq1uG5f87HsAD1kHj4rO1rUwUIpAfVfgdz84q1JstNU7tgCX6FmGcfYOn5tlQ004bE6Bz5a'
-STRIPE_SECRET_KEY = 'sk_test_51RklocR5uhyPVyuvSywDmBCE6aapss8f4wLpievpWLEmHnMKtO8XCbxsGXtoZZnj7kOImnOZypCbDYnua6XMsgAH00oJQYK60p'
-STRIPE_WEBHOOK_SECRET = 'whsec_b4fb37d48983c3932682b448e1f11a729cf2ee0d3196b6310a87867819f79ead'
+# Stripe Configuration - Use environment variables for security
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='pk_test_your_publishable_key_here')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='sk_test_your_secret_key_here')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='whsec_your_webhook_secret_here')
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Currency Configuration
+# Display currency (what users see)
+DISPLAY_CURRENCY = 'GHS'
+DISPLAY_CURRENCY_SYMBOL = '₵'
+
+# Payment processing currency (what Stripe uses)
+STRIPE_CURRENCY = 'usd'
+STRIPE_CURRENCY_SYMBOL = '$'
+
+# Exchange rate: 1 USD = X GHS (you should update this regularly or use an API)
+USD_TO_GHS_RATE = config('USD_TO_GHS_RATE', default=12.0, cast=float)  # Example rate
+
+# Email Configuration
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 
 WSGI_APPLICATION = 'flexifone_project.wsgi.application'
 
@@ -143,6 +158,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'

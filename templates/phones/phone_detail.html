@@ -109,23 +109,30 @@
                 </div>
                 
                 <!-- Action Buttons -->
-                <div class="flex space-x-4">
+                <div class="flex flex-col space-y-4">
                     {% if user.is_authenticated and not has_credit_account %}
-                        <a href="{% url 'phones:buy_on_credit' phone.slug %}" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
-                            <i class="fas fa-credit-card mr-2"></i>Buy on Credit
-                        </a>
+                        <div class="flex space-x-4">
+                            <a href="{% url 'phones:buy_on_credit' phone.slug %}" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
+                                <i class="fas fa-credit-card mr-2"></i>Buy on Credit
+                            </a>
+                            <a href="{% url 'phones:save_to_own' phone.slug %}" class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
+                                <i class="fas fa-piggy-bank mr-2"></i>Save to Own
+                            </a>
+                        </div>
                     {% elif user.is_authenticated and has_credit_account %}
-                        <button disabled class="flex-1 bg-gray-400 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md cursor-not-allowed">
+                        <button disabled class="w-full bg-gray-400 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md cursor-not-allowed">
                             <i class="fas fa-credit-card mr-2"></i>Already Have a Plan
                         </button>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
+                        <a href="{% url 'accounts:login' %}" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
                             <i class="fas fa-sign-in-alt mr-2"></i>Login to Buy
                         </a>
                     {% endif %}
-                    <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-3 rounded-lg transition-colors">
-                        <i class="far fa-heart"></i>
-                    </button>
+                    <div class="flex justify-end">
+                        <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-3 rounded-lg transition-colors">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

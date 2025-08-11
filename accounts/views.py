@@ -8,7 +8,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.contrib import messages
 from .forms import CustomUserCreationForm, CreditApplicationForm, UserProfileForm
-from .models import Product, CreditAccount, Transaction, CreditApplication
+from .models import CreditAccount, Transaction, CreditApplication
+from phones.models import Phone
 import stripe
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,12 +18,20 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import User
 import random
+import uuid
+from decimal import Decimal
+from .currency_utils import ghs_to_usd_cents, usd_cents_to_ghs, format_ghs_amount
 
 
 @login_required
 def support_view(request):
     """View for the support page"""
     return render(request, 'support.html')
+
+
+def credit_eligibility_view(request):
+    """View for explaining credit eligibility criteria"""
+    return render(request, 'credit_eligibility.html')
 
 
 @login_required
@@ -96,30 +105,46 @@ def dashboard_view(request):
         credit_account = None
         transactions = []
 
-    # If a user has no account, show them products to choose from
-    products = Product.objects.filter(
-        is_active=True) if not credit_account else []
+    # If a user has no account, show them phones to choose from
+    phones = Phone.objects.filter(
+        is_active=True, stock__gt=0) if not credit_account else []
 
     context = {
         'credit_account': credit_account,
         'transactions': transactions,
-        'products': products,
+        'phones': phones,
     }
     return render(request, 'dashboard.html', context)
 
 
 @login_required
-def select_product_view(request, product_id):
+def select_phone_view(request, phone_id):
     # Prevent user from creating a second account if they already have one
     if hasattr(request.user, 'credit_account'):
         return redirect('accounts:dashboard')
 
-    product = get_object_or_404(Product, id=product_id)
+    phone = get_object_or_404(Phone, id=phone_id)
+    
+    # Determine the account type based on the referrer
+    referrer = request.META.get('HTTP_REFERER', '')
+    
+    # Default to SAVINGS (Save to Own) if coming from save_to_own view
+    account_type = CreditAccount.AccountType.SAVINGS
+    
+    # If coming from buy_on_credit view, set to CREDIT (BNPL)
+    if 'buy-on-credit' in referrer:
+        account_type = CreditAccount.AccountType.CREDIT
+        # For BNPL, redirect to credit application instead
+        return redirect('accounts:credit_application', phone_id=phone_id)
 
-    # Create the credit account for the user with the selected product
-    account = CreditAccount.objects.create(user=request.user, product=product)
+    # Create the credit account for the user with the selected phone
+    account = CreditAccount.objects.create(
+        user=request.user,
+        phone=phone,
+        account_type=account_type
+    )
 
-    # We will later redirect to the agreement page, but for now, back to dashboard
+    # Redirect to the agreement page
     return redirect('accounts:agreement', account_id=account.id)
 
 
@@ -138,7 +163,8 @@ def agreement_view(request, account_id):
         account.accepted_at = timezone.now()
         account.save()
 
-        subject = f"Welcome to your FlexiFone Plan for the {account.product.name}!"
+        phone_name = account.phone.name if account.phone else "Unknown Phone"
+        subject = f"Welcome to your FlexiFone Plan for the {phone_name}!"
 
         # We can pass context to a text template
         message = render_to_string('emails/welcome_email.txt', {
@@ -161,9 +187,9 @@ def agreement_view(request, account_id):
 
 
 @login_required
-def credit_application_view(request, product_id):
+def credit_application_view(request, phone_id):
     """Handle credit applications for BNPL purchases"""
-    product = get_object_or_404(Product, id=product_id)
+    phone = get_object_or_404(Phone, id=phone_id)
 
     # Check if user is already verified
     if not request.user.is_verified:
@@ -181,24 +207,33 @@ def credit_application_view(request, product_id):
         if form.is_valid():
             application = form.save(commit=False)
             application.user = request.user
-            application.product = product
-            application.requested_amount = product.price
+            application.phone = phone
 
             # Simple credit scoring logic
             monthly_income = form.cleaned_data['monthly_income']
             monthly_expenses = form.cleaned_data['monthly_expenses']
-            debt_to_income = (monthly_expenses / monthly_income) * 100
+            # Convert Decimal to float for calculation
+            debt_to_income = (float(monthly_expenses) / float(monthly_income)) * 100
 
             # Calculate credit score based on various factors
             base_score = request.user.credit_score
-            income_score = min(100, (monthly_income / 5000)
+            # Convert Decimal to float before multiplication
+            income_score = min(100, (float(monthly_income) / 5000)
                                * 100)  # Cap at ₵5000
             dti_score = max(0, 100 - debt_to_income)  # Lower DTI is better
 
             # Weighted average
             new_score = int((base_score * 0.4) +
                             (income_score * 0.3) + (dti_score * 0.3))
-            application.credit_score = new_score
+            
+            # Store the credit score at time of application
+            application.credit_score_at_time_of_application = new_score
+            
+            # Store the requested loan amount
+            application.requested_loan_amount = phone.price
+            
+            # Store the requested installment count
+            application.requested_installment_count = form.cleaned_data.get('installment_count', 12)
 
             # Simple approval logic
             if new_score >= 650 and debt_to_income <= 50:
@@ -213,7 +248,7 @@ def credit_application_view(request, product_id):
             if application.status == CreditApplication.Status.APPROVED:
                 messages.success(
                     request, "Credit application approved! You can now proceed with your purchase.")
-                return redirect('accounts:bnpl_checkout', product_id=product_id)
+                return redirect('accounts:bnpl_checkout', phone_id=phone_id)
             else:
                 messages.error(
                     request, f"Credit application declined. Reason: {application.decision_reason}")
@@ -223,9 +258,9 @@ def credit_application_view(request, product_id):
 
     context = {
         'form': form,
-        'product': product,
-        'monthly_payment_12': product.monthly_payment_12_months,
-        'monthly_payment_6': product.monthly_payment_6_months,
+        'phone': phone,
+        'monthly_payment_12': phone.monthly_payment_12_months,
+        'monthly_payment_6': phone.monthly_payment_6_months,
     }
     return render(request, 'credit_application.html', context)
 
@@ -265,21 +300,22 @@ def create_payment_intent(request):
     """Create payment intent for embedded form"""
     if request.method == 'POST':
         try:
-            amount = float(request.POST.get('amount'))
-            amount_pesewas = int(amount * 100)
+            amount_ghs = float(request.POST.get('amount'))
+            amount_usd_cents = ghs_to_usd_cents(amount_ghs)
             print(
-                f"Creating payment intent for amount: ₵{amount} ({amount_pesewas} pesewas)")
+                f"Creating payment intent for amount: ₵{amount_ghs} (${amount_usd_cents/100:.2f} USD, {amount_usd_cents} cents)")
 
             credit_account = request.user.credit_account
             print(
                 f"Credit account: {credit_account.id} for user: {request.user.username}")
 
             payment_intent = stripe.PaymentIntent.create(
-                amount=amount_pesewas,
-                currency='ghs',
+                amount=amount_usd_cents,
+                currency=settings.STRIPE_CURRENCY,
                 metadata={
                     'credit_account_id': credit_account.id,
-                    'user_id': request.user.id
+                    'user_id': request.user.id,
+                    'original_amount_ghs': str(amount_ghs)  # Store original GHS amount
                 }
             )
             print(
@@ -346,9 +382,14 @@ def process_payment_success(request, payment_intent):
         account = CreditAccount.objects.get(id=credit_account_id)
         print(f"Found account: {account.id} for user: {account.user.username}")
 
-        # Convert from pesewas to cedis and ensure it's a Decimal
-        from decimal import Decimal
-        amount_paid = Decimal(str(payment_intent.amount / 100))
+        # Get the original GHS amount from metadata, or convert from USD
+        original_ghs = payment_intent.metadata.get('original_amount_ghs')
+        if original_ghs:
+            amount_paid = Decimal(str(original_ghs))
+        else:
+            # Fallback: convert USD cents back to GHS
+            amount_paid = usd_cents_to_ghs(payment_intent.amount)
+
         print(f"Amount paid: ₵{amount_paid}")
 
         # Update account balance
@@ -357,53 +398,62 @@ def process_payment_success(request, payment_intent):
         print(f"Updated balance from ₵{old_balance} to ₵{account.balance}")
 
         # Create transaction record
+        phone_name = account.phone.name if account.phone else "Unknown Phone"
         transaction = Transaction.objects.create(
             account=account,
             amount=amount_paid,
             transaction_type=Transaction.TransactionType.PAYMENT,
             transaction_id=payment_intent.id,
             stripe_payment_intent=payment_intent.id,
-            description=f"Payment for {account.product.name}"
+            description=f"Payment for {phone_name}"
         )
         print(f"Created transaction: {transaction.id}")
         
         # Prepare result data
+        phone_name = account.phone.name if account.phone else "Unknown Phone"
+        phone_price = account.phone.price if account.phone else 0
         result = {
             'amount_paid': amount_paid,
-            'remaining_balance': max(0, account.product.price - account.balance),
-            'product_name': account.product.name,
+            'remaining_balance': max(0, phone_price - account.balance),
+            'product_name': phone_name,
             'plan_completed': False
         }
 
-        # Check if account is completed
-        if account.balance >= account.product.price and account.status != CreditAccount.Status.COMPLETED:
-            account.status = CreditAccount.Status.COMPLETED
-            print(f"Account {account.id} marked as completed")
-            result['plan_completed'] = True
+        # Check if account is eligible for completion
+        if account.is_eligible_for_completion():
+            # Mark as completed
+            if account.mark_as_completed():
+                print(f"Account {account.id} marked as completed")
+                result['plan_completed'] = True
 
-            # Send completion email
-            subject = f"Congratulations! Your plan for the {account.product.name} is complete!"
-            message = render_to_string('emails/plan_completed.txt', {
-                'user': account.user,
-                'account': account,
-            })
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[account.user.email],
-                fail_silently=True,
-            )
+                # Mark as ready for pickup
+                account.mark_as_delivered()
+                print(f"Account {account.id} marked as ready for pickup")
+
+                # Send completion and pickup notification email
+                subject = f"🎉 Congratulations! Your {phone_name} is ready for pickup!"
+                message = render_to_string('emails/plan_completed.txt', {
+                    'user': account.user,
+                    'account': account,
+                })
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[account.user.email],
+                    fail_silently=True,
+                )
 
         account.save()
         print(f"Account saved successfully")
         
         # Enhanced success message with more details
         if account.status == CreditAccount.Status.COMPLETED:
+            phone_name = account.phone.name if account.phone else "Unknown Phone"
             messages.success(
-                request, f"Congratulations! Your payment of ₵{amount_paid} has been processed successfully. You have completed your payment plan for the {account.product.name}!")
+                request, f"Congratulations! Your payment of ₵{amount_paid} has been processed successfully. You have completed your payment plan for the {phone_name}!")
         else:
-            remaining = account.product.price - account.balance
+            remaining = account.remaining_balance
             messages.success(
                 request, f"Payment of ₵{amount_paid} processed successfully! Remaining balance: ₵{remaining:.2f}")
 
@@ -428,12 +478,13 @@ def create_checkout_session(request):
             credit_account = request.user.credit_account
 
             # Get the amount from the frontend form (in cedis)
-            amount_cedis = float(request.POST.get('amount'))
-            # Convert to pesewas for Stripe
-            amount_pesewas = int(amount_cedis * 100)
+            amount_ghs = float(request.POST.get('amount'))
+            # Convert to USD cents for Stripe
+            amount_usd_cents = ghs_to_usd_cents(amount_ghs)
+            phone_name = credit_account.phone.name if credit_account.phone else "Unknown Phone"
 
             print(
-                f"Creating checkout session for account {credit_account.id}, amount: ₵{amount_cedis}")
+                f"Creating checkout session for account {credit_account.id}, amount: ₵{amount_ghs} (${amount_usd_cents/100:.2f} USD)")
 
             # Create a new Checkout Session
             checkout_session = stripe.checkout.Session.create(
@@ -441,11 +492,12 @@ def create_checkout_session(request):
                 line_items=[
                     {
                         'price_data': {
-                            'currency': 'ghs',
+                            'currency': settings.STRIPE_CURRENCY,
                             'product_data': {
-                                'name': f"Deposit for {credit_account.product.name}",
+                                'name': f"Deposit for {phone_name}",
+                                'description': f"FlexiFone payment (₵{amount_ghs} GHS equivalent)",
                             },
-                            'unit_amount': amount_pesewas,
+                            'unit_amount': amount_usd_cents,
                         },
                         'quantity': 1,
                     }
@@ -457,7 +509,8 @@ def create_checkout_session(request):
                 cancel_url=request.build_absolute_uri('/accounts/dashboard/'),
                 # CRITICAL: Store our internal account ID in metadata to link the payment back
                 metadata={
-                    'credit_account_id': credit_account.id
+                    'credit_account_id': credit_account.id,
+                    'original_amount_ghs': str(amount_ghs)  # Store original GHS amount
                 }
             )
             print(f"Created checkout session: {checkout_session['id']}")
@@ -501,9 +554,15 @@ def stripe_webhook(request):
 
         try:
             account = CreditAccount.objects.get(id=credit_account_id)
-            # Convert from pesewas to cedis and ensure it's a Decimal
-            from decimal import Decimal
-            amount_paid = Decimal(str(session.get('amount_total', 0) / 100))
+
+            # Get the original GHS amount from metadata, or convert from USD
+            original_ghs = session.get('metadata', {}).get('original_amount_ghs')
+            if original_ghs:
+                amount_paid = Decimal(str(original_ghs))
+            else:
+                # Fallback: convert USD cents back to GHS
+                amount_paid = usd_cents_to_ghs(session.get('amount_total', 0))
+
             print(
                 f"Processing payment of ₵{amount_paid} for account {account.id}")
 
@@ -518,16 +577,22 @@ def stripe_webhook(request):
                 transaction_id=session.get(
                     'payment_intent', f"stripe_{session.get('id')}"),
                 stripe_payment_intent=session.get('payment_intent'),
-                description=f"Payment for {account.product.name}"
+                description=f"Payment for {account.phone.name if account.phone else 'Unknown Phone'}"
             )
 
-            # 3. Update account status if needed
-            if account.balance >= account.product.price and account.status != CreditAccount.Status.COMPLETED:
-                account.status = CreditAccount.Status.COMPLETED
-                print(f"Account {account.id} marked as completed")
+            # 3. Check if account is eligible for completion
+            if account.is_eligible_for_completion():
+                # Mark as completed
+                if account.mark_as_completed():
+                    print(f"Account {account.id} marked as completed")
 
-                # Send completion email
-                subject = f"Congratulations! Your plan for the {account.product.name} is complete!"
+                    # Mark as ready for pickup
+                    account.mark_as_delivered()
+                    print(f"Account {account.id} marked as ready for pickup")
+
+                    # Send completion and pickup notification email
+                    phone_name = account.phone.name if account.phone else "Unknown Phone"
+                subject = f"Congratulations! Your plan for the {phone_name} is complete!"
                 message = render_to_string('emails/plan_completed.txt', {
                     'user': account.user,
                     'account': account,
@@ -555,7 +620,7 @@ def stripe_webhook(request):
 
 
 @login_required
-def bnpl_checkout_view(request, product_id):
+def bnpl_checkout_view(request, phone_id):
     # SECURITY: Only verified users can use BNPL
     if not request.user.is_verified:
         messages.error(
@@ -566,18 +631,18 @@ def bnpl_checkout_view(request, product_id):
         messages.error(request, "You already have an active credit account.")
         return redirect('accounts:dashboard')
 
-    product = get_object_or_404(Product, id=product_id)
+    phone = get_object_or_404(Phone, id=phone_id)
 
     # Check if user has an approved credit application
     credit_app = CreditApplication.objects.filter(
         user=request.user,
-        product=product,
+        phone=phone,
         status=CreditApplication.Status.APPROVED
     ).first()
 
     if not credit_app:
         messages.error(request, "You need to apply for credit first.")
-        return redirect('accounts:credit_application', product_id=product_id)
+        return redirect('accounts:credit_application', phone_id=phone_id)
 
     # Create a Stripe Customer if one doesn't exist
     if not request.user.stripe_customer_id:
@@ -592,14 +657,14 @@ def bnpl_checkout_view(request, product_id):
     # We will finalize it after they've added their card details
     account = CreditAccount.objects.create(
         user=request.user,
-        product=product,
+        phone=phone,
         account_type=CreditAccount.AccountType.CREDIT,
         status=CreditAccount.Status.ACTIVE,  # Still 'Active' until card is saved
-        loan_amount=product.price,
+        loan_amount=phone.price,
         installment_count=credit_app.installment_count,
         installment_amount=round(
-            product.price / credit_app.installment_count, 2),
-        interest_rate=product.interest_rate,
+            phone.price / credit_app.installment_count, 2),
+        interest_rate=phone.interest_rate,
     )
 
     # Create a Stripe Checkout session in 'setup' mode
@@ -630,8 +695,9 @@ def bnpl_success_view(request, account_id):
     account.save()
 
     # Send success message
+    phone_name = account.phone.name if account.phone else "Unknown Phone"
     messages.success(
-        request, f"Your credit plan for the {account.product.name} has been set up successfully! Your first payment is due on {account.next_payment_due_date.strftime('%B %d, %Y')}.")
+        request, f"Your credit plan for the {phone_name} has been set up successfully! Your first payment is due on {account.next_payment_due_date.strftime('%B %d, %Y')}.")
 
     # TODO: Send a "BNPL Plan Started" email notification
 
@@ -696,6 +762,130 @@ def business_dashboard_view(request):
     return render(request, 'business_dashboard.html', context)
 
 
+@staff_member_required
+def customer_management_view(request):
+    """View for managing customers, credit accounts, and account types"""
+    # Get pending credit accounts
+    pending_accounts = CreditAccount.objects.filter(status='PENDING')
+    
+    # Get all credit accounts
+    all_accounts = CreditAccount.objects.all().order_by('-created_at')
+    
+    # Get unverified users
+    unverified_users = User.objects.filter(is_verified=False)
+    
+    # Get account type settings (placeholder for now)
+    credit_settings = {
+        'interest_rate': 15.00,
+        'max_installments': 12,
+        'min_credit_score': 600
+    }
+    
+    savings_settings = {
+        'min_deposit_percent': 10.00,
+        'max_duration': 24,
+        'bonus_rate': 0.00
+    }
+    
+    context = {
+        'pending_accounts': pending_accounts,
+        'all_accounts': all_accounts,
+        'unverified_users': unverified_users,
+        'credit_settings': credit_settings,
+        'savings_settings': savings_settings
+    }
+    
+    return render(request, 'customer_management.html', context)
+
+
+@staff_member_required
+def approve_account_view(request, account_id):
+    """Approve a pending credit account"""
+    if request.method == 'POST':
+        account = get_object_or_404(CreditAccount, id=account_id)
+        
+        # Update account status
+        account.status = CreditAccount.Status.ACTIVE
+        account.save()
+        
+        messages.success(request, f"Credit account for {account.user.username} has been approved.")
+    
+    return redirect('accounts:customer_management')
+
+
+@staff_member_required
+def decline_account_view(request, account_id):
+    """Decline a pending credit account"""
+    if request.method == 'POST':
+        account = get_object_or_404(CreditAccount, id=account_id)
+        
+        # Update account status
+        account.status = CreditAccount.Status.DECLINED
+        account.save()
+        
+        messages.success(request, f"Credit account for {account.user.username} has been declined.")
+    
+    return redirect('accounts:customer_management')
+
+
+@staff_member_required
+def verify_user_view(request, user_id):
+    """Verify a user's identity"""
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        
+        # Update user verification status
+        user.is_verified = True
+        user.save()
+        
+        messages.success(request, f"User {user.username} has been verified.")
+    
+    return redirect('accounts:customer_management')
+
+
+@staff_member_required
+def account_detail_view(request, account_id):
+    """View details of a specific credit account"""
+    account = get_object_or_404(CreditAccount, id=account_id)
+    transactions = account.transactions.all().order_by('-timestamp')
+    
+    context = {
+        'account': account,
+        'transactions': transactions
+    }
+    
+    return render(request, 'account_detail.html', context)
+
+
+@staff_member_required
+def update_account_settings_view(request):
+    """Update account type settings"""
+    if request.method == 'POST':
+        account_type = request.POST.get('account_type')
+        
+        if account_type == 'CREDIT':
+            # Update BNPL settings
+            interest_rate = request.POST.get('interest_rate')
+            max_installments = request.POST.get('max_installments')
+            min_credit_score = request.POST.get('min_credit_score')
+            
+            # Here you would save these settings to your database
+            # For now, just show a success message
+            messages.success(request, "BNPL settings updated successfully.")
+            
+        elif account_type == 'SAVINGS':
+            # Update Savings settings
+            min_deposit_percent = request.POST.get('min_deposit_percent')
+            max_duration = request.POST.get('max_duration')
+            bonus_rate = request.POST.get('bonus_rate')
+            
+            # Here you would save these settings to your database
+            # For now, just show a success message
+            messages.success(request, "Savings settings updated successfully.")
+    
+    return redirect('accounts:customer_management')
+
+
 @login_required
 def payment_history_view(request):
     """Display payment history for the logged-in user"""
@@ -735,3 +925,37 @@ def logout_view(request):
     from django.contrib.auth import logout
     logout(request)
     return redirect('accounts:login')
+
+
+@login_required
+def cancel_plan_view(request):
+    """View for cancelling a credit or savings plan"""
+    try:
+        credit_account = request.user.credit_account
+    except CreditAccount.DoesNotExist:
+        messages.error(request, "You don't have an active plan to cancel.")
+        return redirect('accounts:dashboard')
+    
+    if request.method == 'POST':
+        # Store the phone for later use
+        phone = credit_account.phone
+        phone_name = phone.name if phone else "Unknown Phone"
+
+        # Create a record of transactions for accounting purposes
+        if credit_account.balance > 0:
+            # If there's a balance, create a refund transaction
+            Transaction.objects.create(
+                account=credit_account,
+                amount=credit_account.balance,
+                transaction_type=Transaction.TransactionType.REFUND,
+                transaction_id=f"refund_{uuid.uuid4()}",
+                description=f"Refund for cancelled plan: {phone_name}"
+            )
+
+        # Delete the credit account
+        credit_account.delete()
+
+        messages.success(request, f"Your plan for the {phone_name} has been cancelled successfully. You can now choose a different plan.")
+        return redirect('accounts:dashboard')
+    
+    return render(request, 'cancel_plan.html', {'credit_account': credit_account})

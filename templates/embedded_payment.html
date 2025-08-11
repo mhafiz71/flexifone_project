@@ -16,7 +16,7 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <p class="text-sm text-gray-600">Product</p>
-                    <p class="font-semibold text-gray-900">{{ credit_account.product.name }}</p>
+                    <p class="font-semibold text-gray-900">{{ credit_account.phone.name|default:"Unknown Phone" }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Current Balance</p>
@@ -24,7 +24,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Total Amount</p>
-                    <p class="font-semibold text-gray-900">₵{{ credit_account.product.price }}</p>
+                    <p class="font-semibold text-gray-900">₵{{ credit_account.phone.price|default:"0" }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Remaining</p>

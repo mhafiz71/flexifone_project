@@ -5,6 +5,7 @@ from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from .models import CreditAccount, Transaction
 from django.core.mail import send_mail
+from .currency_utils import ghs_to_usd_cents
 from django.template.loader import render_to_string
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -29,9 +30,10 @@ def process_daily_installments():
         
         try:
             # Create a PaymentIntent to charge the customer off-session
+            amount_usd_cents = ghs_to_usd_cents(account.installment_amount)
             payment_intent = stripe.PaymentIntent.create(
-                amount=int(account.installment_amount * 100), # Amount in pesewas
-                currency='ghs',
+                amount=amount_usd_cents, # Amount in USD cents
+                currency=settings.STRIPE_CURRENCY,
                 customer=account.user.stripe_customer_id,
                 # This is crucial: it finds the default payment method saved to the customer
                 payment_method=stripe.Customer.retrieve(account.user.stripe_customer_id)['invoice_settings']['default_payment_method'],

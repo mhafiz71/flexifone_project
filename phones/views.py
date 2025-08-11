@@ -4,10 +4,11 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from .models import Phone
 from .forms import PhoneForm
-from accounts.models import CreditAccount, Product
+from accounts.models import CreditAccount
 
 def phone_list(request):
-    phones = Phone.objects.filter(is_active=True)
+    # Only show phones that are active AND have stock available
+    phones = Phone.objects.filter(is_active=True, stock__gt=0)
     brand = request.GET.get('brand')
     if brand:
         phones = phones.filter(brand=brand)
@@ -26,7 +27,8 @@ def phone_list(request):
     return render(request, 'phones/phone_list.html', context)
 
 def phone_detail(request, slug):
-    phone = get_object_or_404(Phone, slug=slug, is_active=True)
+    # Only allow access to phones that are active AND have stock available
+    phone = get_object_or_404(Phone, slug=slug, is_active=True, stock__gt=0)
     
     # Check if user is authenticated and has an existing credit account
     has_credit_account = False
@@ -93,7 +95,8 @@ def phone_delete(request, slug):
 
 @login_required
 def buy_on_credit(request, slug):
-    phone = get_object_or_404(Phone, slug=slug, is_active=True)
+    # Only allow purchase of phones that are active AND have stock available
+    phone = get_object_or_404(Phone, slug=slug, is_active=True, stock__gt=0)
     
     # Check if user already has a credit account
     if hasattr(request.user, 'credit_account'):
@@ -105,16 +108,28 @@ def buy_on_credit(request, slug):
         messages.error(request, "Your account must be verified before applying for credit.")
         return redirect('phones:phone_detail', slug=slug)
     
-    # Create a Product instance from the Phone
-    product = Product.objects.create(
-        name=phone.name,
-        brand=phone.brand,
-        description=phone.description,
-        price=phone.price,
-        is_active=True,
-        stock_quantity=phone.stock,
-        credit_available=True
-    )
+    # Check if user is eligible for credit
+    if not request.user.is_eligible_for_credit():
+        messages.error(request, "You are not eligible for credit at this time. Credit eligibility requires account verification and a minimum credit score of 600.")
+        return redirect('phones:phone_detail', slug=slug)
     
     # Redirect to credit application
-    return redirect('accounts:credit_application', product_id=product.id)
+    return redirect('accounts:credit_application', phone_id=phone.id)
+
+@login_required
+def save_to_own(request, slug):
+    # Only allow purchase of phones that are active AND have stock available
+    phone = get_object_or_404(Phone, slug=slug, is_active=True, stock__gt=0)
+    
+    # Check if user already has a credit account
+    if hasattr(request.user, 'credit_account'):
+        messages.error(request, "You already have an active plan. You can only have one plan at a time.")
+        return redirect('phones:phone_detail', slug=slug)
+    
+    # Check if user is verified
+    if not request.user.is_verified:
+        messages.error(request, "Your account must be verified before starting a Save-to-Own plan.")
+        return redirect('phones:phone_detail', slug=slug)
+    
+    # Redirect to select_phone view with a parameter indicating this is a save-to-own plan
+    return redirect('accounts:select_phone', phone_id=phone.id)

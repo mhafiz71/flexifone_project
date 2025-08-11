@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancel Your Plan - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Cancel Your Plan</h1>
+            <p class="text-lg text-gray-600">Are you sure you want to cancel your plan for the {{ credit_account.product.name }}?</p>
+        </div>
+
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-8 rounded-r-lg">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Important Information</h3>
+                    <div class="text-sm text-red-700 mt-2 space-y-2">
+                        <p>Cancelling your plan will have the following effects:</p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            {% if credit_account.account_type == 'CREDIT' %}
+                            <li>Your credit plan will be terminated immediately.</li>
+                            <li>Any remaining balance will need to be paid in full.</li>
+                            <li>Your payment method will remain on file for future plans.</li>
+                            {% else %}
+                            <li>Your savings plan will be terminated immediately.</li>
+                            <li>Any amount you've saved will be refunded to your original payment method.</li>
+                            <li>You will lose your place in line for the {{ credit_account.product.name }}.</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Plan Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Product</p>
+                    <p class="text-base font-medium text-gray-900">{{ credit_account.product.brand }} {{ credit_account.product.name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Plan Type</p>
+                    <p class="text-base font-medium text-gray-900">{{ credit_account.get_account_type_display }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Current Balance</p>
+                    <p class="text-base font-medium text-gray-900">₵{{ credit_account.balance }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Status</p>
+                    <p class="text-base font-medium text-gray-900">{{ credit_account.get_status_display }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+            <a href="{% url 'accounts:dashboard' %}" class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium text-center transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i> Return to Dashboard
+            </a>
+            <form method="post" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-center transition-colors">
+                    <i class="fas fa-times-circle mr-2"></i> Confirm Cancellation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

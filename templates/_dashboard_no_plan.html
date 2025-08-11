@@ -8,55 +8,55 @@
     </div>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {% for product in products %}
+        {% for phone in phones %}
             <div class="bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-200 overflow-hidden">
-                <!-- Product Image -->
+                <!-- Phone Image -->
                 <div class="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
-                    {% if product.image %}
-                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-contain">
+                    {% if phone.image %}
+                    <img src="{{ phone.image.url }}" alt="{{ phone.name }}" class="w-full h-full object-contain">
                     {% else %}
                         <div class="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
                             <i class="fas fa-mobile-alt text-3xl text-indigo-600"></i>
                         </div>
                     {% endif %}
                 </div>
-                
-                <!-- Product Info -->
+
+                <!-- Phone Info -->
                 <div class="p-6">
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-medium text-indigo-600 uppercase tracking-wide">{{ product.brand }}</span>
-                            {% if product.credit_available %}
+                            <span class="text-xs font-medium text-indigo-600 uppercase tracking-wide">{{ phone.brand }}</span>
+                            {% if phone.credit_available %}
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     <i class="fas fa-check-circle mr-1"></i>Credit Available
                                 </span>
                             {% endif %}
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ product.name }}</h3>
-                        <p class="text-sm text-gray-600 mb-4">{{ product.description|truncatewords:15 }}</p>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ phone.name }}</h3>
+                        <p class="text-sm text-gray-600 mb-4">{{ phone.description|truncatewords:15 }}</p>
                     </div>
                     
                     <!-- Pricing -->
                     <div class="mb-6">
                         <div class="flex items-baseline mb-2">
-                            <span class="text-3xl font-bold text-gray-900">₵{{ product.price }}</span>
+                            <span class="text-3xl font-bold text-gray-900">₵{{ phone.price }}</span>
                             <span class="text-sm text-gray-500 ml-2">Full Price</span>
                         </div>
-                        
-                        {% if product.credit_available %}
+
+                        {% if phone.credit_available %}
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-gray-600">Monthly (12 months)</span>
-                                    <span class="font-semibold text-green-600">₵{{ product.monthly_payment_12_months|floatformat:2 }}</span>
+                                    <span class="font-semibold text-green-600">₵{{ phone.monthly_payment_12_months|floatformat:2 }}</span>
                                 </div>
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-gray-600">Monthly (6 months)</span>
-                                    <span class="font-semibold text-green-600">₵{{ product.monthly_payment_6_months|floatformat:2 }}</span>
+                                    <span class="font-semibold text-green-600">₵{{ phone.monthly_payment_6_months|floatformat:2 }}</span>
                                 </div>
-                                {% if product.interest_rate > 0 %}
+                                {% if phone.interest_rate > 0 %}
                                     <div class="text-xs text-gray-500">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        {{ product.interest_rate }}% APR
+                                        {{ phone.interest_rate }}% APR
                                     </div>
                                 {% else %}
                                     <div class="text-xs text-green-600">
@@ -71,8 +71,8 @@
                     <!-- Action Buttons -->
                     <div class="space-y-3">
                         <!-- Credit Purchase Button -->
-                        {% if user.is_verified and product.credit_available %}
-                            <a href="{% url 'accounts:credit_application' product.id %}" 
+                        {% if user.is_verified and phone.credit_available %}
+                        <a href="{% url 'accounts:credit_application' phone.id %}"
                                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center">
                                 <i class="fas fa-credit-card mr-2"></i>
                                 Apply for Credit
@@ -88,8 +88,11 @@
                             </div>
                             <div class="text-xs text-gray-500 text-center">
                                 Complete verification to unlock credit options
+                                <a href="{% url 'accounts:credit_eligibility' %}" class="text-blue-600 hover:text-blue-800 ml-1">
+                                    <i class="fas fa-info-circle"></i>
+                                </a>
                             </div>
-                        {% elif not product.credit_available %}
+                        {% elif not phone.credit_available %}
                             <div class="w-full bg-gray-100 text-gray-500 py-3 px-4 rounded-lg font-semibold flex items-center justify-center">
                                 <i class="fas fa-times-circle mr-2"></i>
                                 Credit Not Available
@@ -97,7 +100,7 @@
                         {% endif %}
                         
                         <!-- Save-to-Own Option -->
-                        <a href="{% url 'accounts:select_product' product.id %}" 
+                        <a href="{% url 'accounts:select_phone' phone.id %}"
                            class="w-full bg-white border-2 border-indigo-600 text-indigo-600 py-3 px-4 rounded-lg font-semibold hover:bg-indigo-50 transition-colors flex items-center justify-center">
                             <i class="fas fa-piggy-bank mr-2"></i>
                             Save-to-Own Plan
@@ -137,6 +140,12 @@
                         <i class="fas fa-check-circle text-green-500 mt-1"></i>
                         <span>Instant approval for verified users</span>
                     </div>
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'accounts:credit_eligibility' %}"
+                        class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+                        <i class="fas fa-info-circle mr-1"></i> Learn about our credit eligibility criteria
+                    </a>
                 </div>
             </div>
         </div>

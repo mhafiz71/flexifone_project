@@ -5,6 +5,8 @@ from django.db.models import Sum
 from decimal import Decimal
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
+import uuid
 
 # 1. Extend the default User model
 
@@ -27,64 +29,7 @@ class User(AbstractUser):
         """Check if user is eligible for credit purchases"""
         return self.is_verified and self.credit_score >= 600
 
-# 2. Model for the phones we are selling
-
-
-class Product(models.Model):
-    BRAND_CHOICES = [
-        ('APPLE', 'Apple'),
-        ('SAMSUNG', 'Samsung'),
-        ('GOOGLE', 'Google'),
-        ('ONEPLUS', 'OnePlus'),
-        ('XIAOMI', 'Xiaomi'),
-        ('OTHER', 'Other'),
-    ]
-
-    name = models.CharField(max_length=100)
-    brand = models.CharField(
-        max_length=20, choices=BRAND_CHOICES, default='OTHER')
-    description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='products/', null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    stock_quantity = models.IntegerField(default=0)
-    credit_available = models.BooleanField(
-        default=True, help_text="Whether this product is available for credit purchase")
-    min_credit_score = models.IntegerField(
-        default=600, help_text="Minimum credit score required for this product")
-
-    # Credit terms
-    max_installments = models.IntegerField(
-        default=12, help_text="Maximum number of installments allowed")
-    interest_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0.00, help_text="Annual interest rate (%)")
-
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True )
-
-    def __str__(self):
-        return f"{self.brand} {self.name}"
-
-    @property
-    def monthly_payment_12_months(self):
-        """Calculate monthly payment for 12-month term"""
-        if self.interest_rate > 0:
-            # Simple interest calculation
-            total_interest = (self.price * self.interest_rate / 100)
-            total_amount = self.price + total_interest
-            return total_amount / 12
-        return self.price / 12
-
-    @property
-    def monthly_payment_6_months(self):
-        """Calculate monthly payment for 6-month term"""
-        if self.interest_rate > 0:
-            total_interest = (self.price * self.interest_rate / 100)
-            total_amount = self.price + total_interest
-            return total_amount / 6
-        return self.price / 6
-
-# 3. The core credit/savings account for each user's goal
+# 2. The core credit/savings account for each user's goal
 
 
 class CreditAccount(models.Model):
@@ -95,7 +40,9 @@ class CreditAccount(models.Model):
     class Status(models.TextChoices):
         PENDING = 'PENDING', 'Pending Approval'
         ACTIVE = 'ACTIVE', 'Active'
-        COMPLETED = 'COMPLETED', 'Completed'
+        COMPLETED = 'COMPLETED', 'Plan Completed'
+        DELIVERED = 'DELIVERED', 'Ready for Pickup'
+        PICKED_UP = 'PICKED_UP', 'Device Picked Up'
         CLOSED = 'CLOSED', 'Closed'
         REPAYING = 'REPAYING', 'Repaying'
         OVERDUE = 'OVERDUE', 'Overdue'
@@ -104,7 +51,7 @@ class CreditAccount(models.Model):
 
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name='credit_account')
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    phone = models.ForeignKey('phones.Phone', on_delete=models.PROTECT, null=True, blank=True)
     balance = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     account_type = models.CharField(
@@ -130,24 +77,82 @@ class CreditAccount(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Plan completion tracking
+    completed_at = models.DateTimeField(null=True, blank=True, help_text="When the plan was completed")
+    pickup_notified_at = models.DateTimeField(null=True, blank=True, help_text="When pickup notification was sent")
+    pickup_location = models.CharField(max_length=255, default="FlexiFone Shop, Tamale, Gumbihini", help_text="Pickup location")
+    pickup_instructions = models.TextField(blank=True, help_text="Special pickup instructions")
+    is_active_plan = models.BooleanField(default=True, help_text="Whether this is the user's active plan")
+
     def __str__(self):
-        return f"{self.user.username}'s {self.account_type} account for {self.product.name}"
+        phone_name = self.phone.name if self.phone else "Unknown Phone"
+        return f"{self.user.username}'s {self.account_type} account for {phone_name}"
 
     @property
     def remaining_balance(self):
         if self.account_type == self.AccountType.CREDIT:
             return (self.loan_amount or 0) - self.balance
-        return self.product.price - self.balance
+        elif self.phone:
+            return self.phone.price - self.balance
+        else:
+            return 0 - self.balance  # Fallback for accounts without phone
 
     @property
     def progress_percentage(self):
         if self.account_type == self.AccountType.CREDIT:
             total = self.loan_amount or 0
+        elif self.phone:
+            total = self.phone.price
         else:
-            total = self.product.price
+            total = 0  # Fallback for accounts without phone
+
         if total > 0:
             return int((self.balance / total) * 100)
         return 0
+
+    def is_eligible_for_completion(self):
+        """Check if the plan is eligible for completion"""
+        if self.status in [self.Status.COMPLETED, self.Status.DELIVERED, self.Status.PICKED_UP]:
+            return False
+
+        if self.account_type == self.AccountType.CREDIT:
+            # For credit accounts, check if all installments are paid
+            return self.balance >= (self.loan_amount or 0)
+        else:
+            # For savings accounts, check if full phone price is paid
+            phone_price = self.phone.price if self.phone else 0
+            return self.balance >= phone_price
+
+    def mark_as_completed(self):
+        """Mark the plan as completed and ready for pickup"""
+        from django.utils import timezone
+
+        if self.is_eligible_for_completion():
+            self.status = self.Status.COMPLETED
+            self.completed_at = timezone.now()
+            self.save()
+            return True
+        return False
+
+    def mark_as_delivered(self):
+        """Mark the device as ready for pickup"""
+        from django.utils import timezone
+
+        if self.status == self.Status.COMPLETED:
+            self.status = self.Status.DELIVERED
+            self.pickup_notified_at = timezone.now()
+            self.save()
+            return True
+        return False
+
+    def mark_as_picked_up(self):
+        """Mark the device as picked up by customer"""
+        if self.status == self.Status.DELIVERED:
+            self.status = self.Status.PICKED_UP
+            self.is_active_plan = False  # No longer active
+            self.save()
+            return True
+        return False
 
     @property
     def remaining_installments(self):
@@ -163,7 +168,7 @@ class CreditAccount(models.Model):
             return timezone.now().date() > self.next_payment_due_date
         return False
 
-# 4. A log for every payment transaction
+# 3. A log for every payment transaction
 
 
 class Transaction(models.Model):
@@ -188,7 +193,7 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.transaction_type} of ₵{self.amount} for {self.account.user.username}"
 
-# 5. Credit Application model
+# 4. Credit Application model
 
 
 class CreditApplication(models.Model):
@@ -200,18 +205,27 @@ class CreditApplication(models.Model):
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='credit_applications')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    requested_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    installment_count = models.IntegerField(default=12)
-    monthly_income = models.DecimalField(max_digits=10, decimal_places=2)
-    employment_status = models.CharField(max_length=50)
-    monthly_expenses = models.DecimalField(max_digits=10, decimal_places=2)
+    phone = models.ForeignKey('phones.Phone', on_delete=models.PROTECT, null=True, blank=True)
+    monthly_income = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Applicant's monthly income")
+    employment_status = models.CharField(max_length=50, null=True, blank=True)
+    monthly_expenses = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Applicant's monthly expenses")
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.PENDING)
-    credit_score = models.IntegerField(null=True, blank=True)
     decision_reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Fields added in migration 0006
+    admin_notes = models.TextField(blank=True, help_text='Notes for internal use')
+    credit_score_at_time_of_application = models.IntegerField(
+        default=0, 
+        help_text="Applicant's credit score when application was submitted",
+        validators=[MinValueValidator(0), MaxValueValidator(850)]
+    )
+    employer_name = models.CharField(max_length=100, null=True, blank=True)
+    employment_duration = models.IntegerField(null=True, blank=True, help_text='Employment duration in months')
+    requested_installment_count = models.IntegerField(default=12)
+    requested_loan_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        return f"Credit application by {self.user.username} for {self.product.name}"
+        return f"Credit application by {self.user.username} for {self.phone.name}"

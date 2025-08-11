@@ -7,7 +7,8 @@
     <!-- Header -->
     <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-4">Credit Application</h1>
-        <p class="text-lg text-gray-600">Complete your application to purchase the {{ product.brand }} {{ product.name }} on credit</p>
+        <p class="text-lg text-gray-600">Complete your application to purchase the {{ phone.brand }} {{ phone.name }} on credit
+        </p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -83,14 +84,14 @@
                     <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i class="fas fa-mobile-alt text-2xl text-indigo-600"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-900">{{ product.brand }} {{ product.name }}</h3>
-                    <p class="text-sm text-gray-600">{{ product.description|truncatewords:10 }}</p>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ phone.brand }} {{ phone.name }}</h3>
+                    <p class="text-sm text-gray-600">{{ phone.description|truncatewords:10 }}</p>
                 </div>
                 
                 <div class="border-t pt-4">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-sm text-gray-600">Full Price</span>
-                        <span class="text-lg font-bold text-gray-900">₵{{ product.price }}</span>
+                        <span class="text-lg font-bold text-gray-900">₵{{ phone.price }}</span>
                     </div>
                     
                     <div class="space-y-2">
@@ -156,6 +157,12 @@
                         <i class="fas fa-check text-green-500"></i>
                         <span>Good credit history</span>
                     </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <a href="{% url 'accounts:credit_eligibility' %}"
+                        class="text-sm text-blue-600 hover:text-blue-800 flex items-center justify-center">
+                        <i class="fas fa-info-circle mr-1"></i> Learn about our credit eligibility criteria
+                    </a>
                 </div>
             </div>
         </div>
