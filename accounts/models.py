@@ -41,9 +41,9 @@ class CreditAccount(models.Model):
         PENDING = 'PENDING', 'Pending Approval'
         ACTIVE = 'ACTIVE', 'Active'
         COMPLETED = 'COMPLETED', 'Plan Completed'
-        DELIVERED = 'DELIVERED', 'Ready for Pickup'
+        AVAILABLE_FOR_PICKUP = 'AVAILABLE_FOR_PICKUP', 'Available for Pickup'
         PICKED_UP = 'PICKED_UP', 'Device Picked Up'
-        CLOSED = 'CLOSED', 'Closed'
+        CLOSED = 'CLOSED', 'Plan Closed'
         REPAYING = 'REPAYING', 'Repaying'
         OVERDUE = 'OVERDUE', 'Overdue'
         PAID_OFF = 'PAID_OFF', 'Paid Off'
@@ -57,7 +57,7 @@ class CreditAccount(models.Model):
     account_type = models.CharField(
         max_length=10, choices=AccountType.choices, default=AccountType.CREDIT)
     status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.PENDING)
+        max_length=25, choices=Status.choices, default=Status.PENDING)
 
     # Credit-specific fields
     loan_amount = models.DecimalField(
@@ -83,6 +83,14 @@ class CreditAccount(models.Model):
     pickup_location = models.CharField(max_length=255, default="FlexiFone Shop, Tamale, Gumbihini", help_text="Pickup location")
     pickup_instructions = models.TextField(blank=True, help_text="Special pickup instructions")
     is_active_plan = models.BooleanField(default=True, help_text="Whether this is the user's active plan")
+
+    # Admin and user action tracking
+    admin_marked_ready_at = models.DateTimeField(null=True, blank=True, help_text="When admin marked device ready for pickup")
+    admin_marked_by = models.ForeignKey('User', null=True, blank=True, on_delete=models.SET_NULL, related_name='marked_accounts', help_text="Admin who marked device ready")
+    user_confirmed_pickup_at = models.DateTimeField(null=True, blank=True, help_text="When user confirmed device pickup")
+    pickup_confirmation_method = models.CharField(max_length=50, blank=True, help_text="How pickup was confirmed: dashboard, phone, in_person")
+    sms_sent_at = models.DateTimeField(null=True, blank=True, help_text="When SMS notification was sent")
+    email_sent_at = models.DateTimeField(null=True, blank=True, help_text="When email notification was sent")
 
     def __str__(self):
         phone_name = self.phone.name if self.phone else "Unknown Phone"
@@ -112,7 +120,7 @@ class CreditAccount(models.Model):
 
     def is_eligible_for_completion(self):
         """Check if the plan is eligible for completion"""
-        if self.status in [self.Status.COMPLETED, self.Status.DELIVERED, self.Status.PICKED_UP]:
+        if self.status in [self.Status.COMPLETED, self.Status.AVAILABLE_FOR_PICKUP, self.Status.PICKED_UP]:
             return False
 
         if self.account_type == self.AccountType.CREDIT:
@@ -124,7 +132,7 @@ class CreditAccount(models.Model):
             return self.balance >= phone_price
 
     def mark_as_completed(self):
-        """Mark the plan as completed and ready for pickup"""
+        """Mark the plan as completed (automatic when payment is complete)"""
         from django.utils import timezone
 
         if self.is_eligible_for_completion():
@@ -134,22 +142,36 @@ class CreditAccount(models.Model):
             return True
         return False
 
-    def mark_as_delivered(self):
-        """Mark the device as ready for pickup"""
+    def mark_available_for_pickup(self, admin_user=None):
+        """Admin action: Mark device as ready for pickup"""
         from django.utils import timezone
 
         if self.status == self.Status.COMPLETED:
-            self.status = self.Status.DELIVERED
-            self.pickup_notified_at = timezone.now()
+            self.status = self.Status.AVAILABLE_FOR_PICKUP
+            self.admin_marked_ready_at = timezone.now()
+            self.admin_marked_by = admin_user
             self.save()
             return True
         return False
 
-    def mark_as_picked_up(self):
-        """Mark the device as picked up by customer"""
-        if self.status == self.Status.DELIVERED:
+    def confirm_pickup(self, confirmation_method='dashboard'):
+        """User action: Confirm device pickup"""
+        from django.utils import timezone
+
+        if self.status == self.Status.AVAILABLE_FOR_PICKUP:
             self.status = self.Status.PICKED_UP
-            self.is_active_plan = False  # No longer active
+            self.user_confirmed_pickup_at = timezone.now()
+            self.pickup_confirmation_method = confirmation_method
+            self.is_active_plan = False  # Plan is now closed
+            self.save()
+            return True
+        return False
+
+    def close_plan(self):
+        """Close the plan and allow new plan selection"""
+        if self.status == self.Status.PICKED_UP:
+            self.status = self.Status.CLOSED
+            self.is_active_plan = False
             self.save()
             return True
         return False
@@ -167,6 +189,30 @@ class CreditAccount(models.Model):
         if self.next_payment_due_date and self.status == self.Status.REPAYING:
             return timezone.now().date() > self.next_payment_due_date
         return False
+
+    def is_plan_active(self):
+        """Check if this plan is currently active (user cannot select new phones)"""
+        # If is_active_plan field exists and is False, plan is not active
+        if hasattr(self, 'is_active_plan') and not self.is_active_plan:
+            return False
+
+        # Check status-based logic for inactive statuses
+        inactive_statuses = [
+            self.Status.PICKED_UP,
+            self.Status.CLOSED,
+            self.Status.DECLINED
+        ]
+
+        if self.status in inactive_statuses:
+            return False
+
+        # For completed plans that haven't been picked up yet, consider them inactive
+        # so users can start new plans after completion
+        if self.status in [self.Status.COMPLETED, self.Status.AVAILABLE_FOR_PICKUP]:
+            return False
+
+        # Active statuses: PENDING, ACTIVE, REPAYING, OVERDUE, PAID_OFF
+        return True
 
 # 3. A log for every payment transaction
 
@@ -210,7 +256,7 @@ class CreditApplication(models.Model):
     employment_status = models.CharField(max_length=50, null=True, blank=True)
     monthly_expenses = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Applicant's monthly expenses")
     status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.PENDING)
+        max_length=25, choices=Status.choices, default=Status.PENDING)
     decision_reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

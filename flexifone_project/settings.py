@@ -105,6 +105,11 @@ USD_TO_GHS_RATE = config('USD_TO_GHS_RATE', default=12.0, cast=float)  # Example
 # Email Configuration
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 
+# SMS Configuration (Arkesel)
+ARKESEL_API_KEY = config('ARKESEL_API_KEY', default='')
+ARKESEL_SENDER_ID = config('ARKESEL_SENDER_ID', default='FlexiFone')
+ARKESEL_SANDBOX = config('ARKESEL_SANDBOX', default=False, cast=bool)
+
 WSGI_APPLICATION = 'flexifone_project.wsgi.application'
 
 

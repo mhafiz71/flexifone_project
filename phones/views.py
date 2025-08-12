@@ -98,8 +98,8 @@ def buy_on_credit(request, slug):
     # Only allow purchase of phones that are active AND have stock available
     phone = get_object_or_404(Phone, slug=slug, is_active=True, stock__gt=0)
     
-    # Check if user already has a credit account
-    if hasattr(request.user, 'credit_account'):
+    # Check if user already has an active credit account
+    if hasattr(request.user, 'credit_account') and request.user.credit_account.is_plan_active():
         messages.error(request, "You already have an active credit plan. You can only have one plan at a time.")
         return redirect('phones:phone_detail', slug=slug)
     
@@ -121,8 +121,8 @@ def save_to_own(request, slug):
     # Only allow purchase of phones that are active AND have stock available
     phone = get_object_or_404(Phone, slug=slug, is_active=True, stock__gt=0)
     
-    # Check if user already has a credit account
-    if hasattr(request.user, 'credit_account'):
+    # Check if user already has an active credit account
+    if hasattr(request.user, 'credit_account') and request.user.credit_account.is_plan_active():
         messages.error(request, "You already have an active plan. You can only have one plan at a time.")
         return redirect('phones:phone_detail', slug=slug)
     

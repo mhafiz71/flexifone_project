@@ -1,0 +1,31 @@
+Hi {{ user.username }},
+
+📱 GREAT NEWS! Your {{ account.phone.name }} is ready for pickup! 📱
+
+Your device has been prepared and is waiting for you at our store.
+
+📍 PICKUP DETAILS:
+Location: {{ account.pickup_location }}
+Hours: Monday - Saturday, 9:00 AM - 6:00 PM
+Contact: +233 XX XXX XXXX
+
+📋 WHAT TO BRING:
+- Valid ID (National ID or Passport)
+- This email confirmation
+- Your FlexiFone account details
+
+{% if account.pickup_instructions %}
+📝 SPECIAL INSTRUCTIONS:
+{{ account.pickup_instructions }}
+{% endif %}
+
+🎉 CONGRATULATIONS on completing your FlexiFone plan! We're excited for you to enjoy your new device.
+
+Once you collect your device, you can confirm the pickup in your dashboard and start planning your next FlexiFone purchase!
+
+Best regards,
+The FlexiFone Team
+
+---
+This is an automated message. Please do not reply to this email.
+For support, visit our store or contact us at +233 XX XXX XXXX

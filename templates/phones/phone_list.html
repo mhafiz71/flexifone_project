@@ -97,7 +97,7 @@
 <!-- Action buttons -->
 <div class="flex flex-col space-y-3">
     {% if user.is_authenticated and phone.stock > 0 %}
-    <a href="{% url 'accounts:select_phone' phone.id %}"
+    <a href="{% url 'accounts:choose_plan' phone.id %}"
         class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-xl font-semibold text-center transition-all duration-200 shadow-lg transform hover:-translate-y-0.5">
         <i class="fas fa-shopping-cart mr-2"></i>
         Select Plan

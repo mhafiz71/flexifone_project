@@ -101,29 +101,45 @@ def dashboard_view(request):
     try:
         credit_account = request.user.credit_account
         transactions = credit_account.transactions.all().order_by('-timestamp')
+
+        # Check if the account is actually active (not completed/picked up)
+        is_active_plan = credit_account.is_plan_active()
+
     except CreditAccount.DoesNotExist:
         credit_account = None
         transactions = []
+        is_active_plan = False
 
-    # If a user has no account, show them phones to choose from
-    phones = Phone.objects.filter(
-        is_active=True, stock__gt=0) if not credit_account else []
+    # Show phones if user has no account OR if their plan is completed
+    phones = Phone.objects.filter(is_active=True, stock__gt=0) if not credit_account or not is_active_plan else []
 
     context = {
         'credit_account': credit_account,
         'transactions': transactions,
         'phones': phones,
+        'is_active_plan': is_active_plan,
     }
     return render(request, 'dashboard.html', context)
 
 
 @login_required
 def select_phone_view(request, phone_id):
-    # Prevent user from creating a second account if they already have one
-    if hasattr(request.user, 'credit_account'):
-        return redirect('accounts:dashboard')
-
     phone = get_object_or_404(Phone, id=phone_id)
+
+    # Check if user has an existing account
+    if hasattr(request.user, 'credit_account'):
+        existing_account = request.user.credit_account
+
+        # If user has an active plan (not completed), redirect to dashboard
+        is_active_plan = existing_account.is_plan_active()
+
+        if is_active_plan:
+            messages.error(request, "You already have an active plan. Complete your current plan before selecting a new phone.")
+            return redirect('accounts:dashboard')
+
+        # If plan is completed, allow new plan selection
+        # We'll handle this by creating a new account or updating the existing one
+        messages.info(request, f"Starting a new plan for {phone.name}. Your previous plan history is preserved.")
     
     # Determine the account type based on the referrer
     referrer = request.META.get('HTTP_REFERER', '')
@@ -137,12 +153,30 @@ def select_phone_view(request, phone_id):
         # For BNPL, redirect to credit application instead
         return redirect('accounts:credit_application', phone_id=phone_id)
 
-    # Create the credit account for the user with the selected phone
-    account = CreditAccount.objects.create(
-        user=request.user,
-        phone=phone,
-        account_type=account_type
-    )
+    # Handle account creation or update
+    if hasattr(request.user, 'credit_account'):
+        # Update existing account for new plan
+        account = request.user.credit_account
+        account.phone = phone
+        account.account_type = account_type
+        account.status = CreditAccount.Status.PENDING
+        account.balance = 0.00
+        account.accepted_terms = False
+        account.accepted_at = None
+        account.loan_amount = None
+        account.installment_amount = None
+        account.next_payment_due_date = None
+        account.last_payment_date = None
+        account.is_active_plan = True  # Mark as active plan
+        account.save()
+    else:
+        # Create new account for first-time users
+        account = CreditAccount.objects.create(
+            user=request.user,
+            phone=phone,
+            account_type=account_type,
+            is_active_plan=True
+        )
 
     # Redirect to the agreement page
     return redirect('accounts:agreement', account_id=account.id)
@@ -421,17 +455,13 @@ def process_payment_success(request, payment_intent):
 
         # Check if account is eligible for completion
         if account.is_eligible_for_completion():
-            # Mark as completed
+            # Mark as completed (admin will later mark as available for pickup)
             if account.mark_as_completed():
                 print(f"Account {account.id} marked as completed")
                 result['plan_completed'] = True
 
-                # Mark as ready for pickup
-                account.mark_as_delivered()
-                print(f"Account {account.id} marked as ready for pickup")
-
-                # Send completion and pickup notification email
-                subject = f"🎉 Congratulations! Your {phone_name} is ready for pickup!"
+                # Send plan completion notification (not pickup notification yet)
+                subject = f"🎉 Congratulations! Your {phone_name} plan is complete!"
                 message = render_to_string('emails/plan_completed.txt', {
                     'user': account.user,
                     'account': account,
@@ -443,6 +473,17 @@ def process_payment_success(request, payment_intent):
                     recipient_list=[account.user.email],
                     fail_silently=True,
                 )
+
+                # Send SMS notification for plan completion
+                try:
+                    from .sms_service import send_plan_completed_sms
+                    sms_result = send_plan_completed_sms(account)
+                    if sms_result['success']:
+                        print(f"Plan completion SMS sent to {account.user.username}")
+                    else:
+                        print(f"Failed to send plan completion SMS: {sms_result.get('error')}")
+                except Exception as e:
+                    print(f"Error sending plan completion SMS: {str(e)}")
 
         account.save()
         print(f"Account saved successfully")
@@ -582,13 +623,9 @@ def stripe_webhook(request):
 
             # 3. Check if account is eligible for completion
             if account.is_eligible_for_completion():
-                # Mark as completed
+                # Mark as completed (admin will later mark as available for pickup)
                 if account.mark_as_completed():
                     print(f"Account {account.id} marked as completed")
-
-                    # Mark as ready for pickup
-                    account.mark_as_delivered()
-                    print(f"Account {account.id} marked as ready for pickup")
 
                     # Send completion and pickup notification email
                     phone_name = account.phone.name if account.phone else "Unknown Phone"
@@ -763,14 +800,141 @@ def business_dashboard_view(request):
 
 
 @staff_member_required
+def mark_available_for_pickup_view(request, account_id):
+    """Admin view to mark a single account as available for pickup"""
+    account = get_object_or_404(CreditAccount, id=account_id)
+
+    if account.status != CreditAccount.Status.COMPLETED:
+        messages.error(request, f"Account {account.id} is not in completed status.")
+        return redirect('accounts:customer_management')
+
+    if account.mark_available_for_pickup(admin_user=request.user):
+        messages.success(request, f"Device for {account.user.username} marked as available for pickup.")
+
+        # Send pickup ready notifications
+        try:
+            # Send email notification
+            subject = f"📱 Your {account.phone.name} is ready for pickup!"
+            message = render_to_string('emails/pickup_ready.txt', {
+                'user': account.user,
+                'account': account,
+            })
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[account.user.email],
+                fail_silently=True,
+            )
+            account.email_sent_at = timezone.now()
+
+            # Send SMS notification
+            from .sms_service import send_pickup_ready_sms
+            sms_result = send_pickup_ready_sms(account)
+            if sms_result['success']:
+                print(f"Pickup ready SMS sent to {account.user.username}")
+            else:
+                print(f"Failed to send pickup ready SMS: {sms_result.get('error')}")
+
+            account.save()
+
+        except Exception as e:
+            print(f"Error sending pickup notifications: {str(e)}")
+            messages.warning(request, "Device marked ready but notification sending failed.")
+    else:
+        messages.error(request, "Failed to mark device as available for pickup.")
+
+    return redirect('accounts:customer_management')
+
+@staff_member_required
+def bulk_mark_available_for_pickup_view(request):
+    """Admin view to mark multiple accounts as available for pickup"""
+    if request.method == 'POST':
+        account_ids = request.POST.getlist('account_ids')
+        if not account_ids:
+            messages.error(request, "No accounts selected.")
+            return redirect('accounts:customer_management')
+
+        success_count = 0
+        error_count = 0
+
+        for account_id in account_ids:
+            try:
+                account = CreditAccount.objects.get(id=account_id, status=CreditAccount.Status.COMPLETED)
+                if account.mark_available_for_pickup(admin_user=request.user):
+                    success_count += 1
+
+                    # Send notifications
+                    try:
+                        # Send email
+                        subject = f"📱 Your {account.phone.name} is ready for pickup!"
+                        message = render_to_string('emails/pickup_ready.txt', {
+                            'user': account.user,
+                            'account': account,
+                        })
+                        send_mail(
+                            subject=subject,
+                            message=message,
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[account.user.email],
+                            fail_silently=True,
+                        )
+                        account.email_sent_at = timezone.now()
+
+                        # Send SMS
+                        from .sms_service import send_pickup_ready_sms
+                        sms_result = send_pickup_ready_sms(account)
+                        account.save()
+
+                    except Exception as e:
+                        print(f"Error sending notifications for account {account_id}: {str(e)}")
+                else:
+                    error_count += 1
+            except CreditAccount.DoesNotExist:
+                error_count += 1
+
+        if success_count > 0:
+            messages.success(request, f"Successfully marked {success_count} devices as available for pickup.")
+        if error_count > 0:
+            messages.error(request, f"Failed to process {error_count} accounts.")
+
+    return redirect('accounts:customer_management')
+
+@login_required
+def confirm_pickup_view(request, account_id):
+    """User view to confirm device pickup"""
+    account = get_object_or_404(CreditAccount, id=account_id, user=request.user)
+
+    if account.status != CreditAccount.Status.AVAILABLE_FOR_PICKUP:
+        messages.error(request, "Device is not available for pickup confirmation.")
+        return redirect('accounts:dashboard')
+
+    if request.method == 'POST':
+        if account.confirm_pickup(confirmation_method='dashboard'):
+            messages.success(request, f"Thank you! You've confirmed pickup of your {account.phone.name}. You can now select a new phone plan.")
+        else:
+            messages.error(request, "Failed to confirm pickup. Please try again.")
+
+    return redirect('accounts:dashboard')
+
+@staff_member_required
 def customer_management_view(request):
     """View for managing customers, credit accounts, and account types"""
     # Get pending credit accounts
     pending_accounts = CreditAccount.objects.filter(status='PENDING')
-    
+
+    # Get completed accounts awaiting admin action
+    completed_accounts = CreditAccount.objects.filter(status='COMPLETED').order_by('-completed_at')
+
+    # Get accounts available for pickup
+    available_for_pickup = CreditAccount.objects.filter(status='AVAILABLE_FOR_PICKUP').order_by('-admin_marked_ready_at')
+
+    # Get picked up accounts
+    picked_up_accounts = CreditAccount.objects.filter(status='PICKED_UP').order_by('-user_confirmed_pickup_at')
+
     # Get all credit accounts
     all_accounts = CreditAccount.objects.all().order_by('-created_at')
-    
+
     # Get unverified users
     unverified_users = User.objects.filter(is_verified=False)
     
@@ -789,6 +953,9 @@ def customer_management_view(request):
     
     context = {
         'pending_accounts': pending_accounts,
+        'completed_accounts': completed_accounts,
+        'available_for_pickup': available_for_pickup,
+        'picked_up_accounts': picked_up_accounts,
         'all_accounts': all_accounts,
         'unverified_users': unverified_users,
         'credit_settings': credit_settings,
