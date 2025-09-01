@@ -8,6 +8,7 @@
     {% tailwind_css %}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         /* Line clamp utilities */
         .line-clamp-2 {
@@ -87,19 +88,88 @@
                 <!-- User Menu -->
                 <div class="flex items-center space-x-4">
                     {% if user.is_authenticated %}
-                        <div class="relative">
-                            <button class="flex items-center space-x-2 text-gray-700 hover:text-green-600 transition-colors">
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open"
+                                class="flex items-center space-x-2 text-gray-700 hover:text-green-600 transition-colors">
+                                {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}"
+                                    class="w-8 h-8 rounded-full object-cover">
+                                {% else %}
                                 <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
-                                    <span class="text-white text-sm font-medium">{{ user.username|first|upper }}</span>
-                                </div>
-                                <span class="hidden md:block text-sm font-medium">{{ user.username }}</span>
+                                        <span class="text-white text-sm font-medium">{{ user.first_name|first|upper|default:user.username|first|upper }}</span>
+                                        </div>
+                                {% endif %}
+                                <span class="hidden md:block text-sm font-medium">{{ user.get_display_name }}</span>
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </button>
-                        </div>
-                        <a href="{% url 'accounts:logout' %}"
-                            class="text-gray-700 hover:text-red-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-red-50">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                        </a>
+<!-- Dropdown Menu -->
+<div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100"
+    x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100"
+    x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100"
+    x-transition:leave-end="transform opacity-0 scale-95"
+    class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+    <!-- Profile Section -->
+    <div class="px-4 py-3 border-b border-gray-100">
+        <div class="flex items-center space-x-3">
+            {% if user.profile_picture %}
+            <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}"
+                class="w-10 h-10 rounded-full object-cover">
+            {% else %}
+            <div
+                class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                <span class="text-white text-sm font-medium">{{
+                    user.first_name|first|upper|default:user.username|first|upper }}</span>
+            </div>
+            {% endif %}
+            <div>
+                <p class="text-sm font-medium text-gray-900">{{ user.get_full_name }}</p>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
+            </div>
+            </div>
+            </div>
+            <!-- Menu Items -->
+            <div class="py-1">
+                <a href="{% url 'accounts:profile' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+                    <i class="fas fa-user mr-3 w-4"></i>My Profile
+                </a>
+                <a href="{% url 'accounts:dashboard' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+                    <i class="fas fa-tachometer-alt mr-3 w-4"></i>Dashboard
+                </a>
+                <a href="{% url 'accounts:credit_building_dashboard' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+                    <i class="fas fa-chart-line mr-3 w-4"></i>Credit Building
+                </a>
+                <a href="{% url 'accounts:payment_history' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+                    <i class="fas fa-history mr-3 w-4"></i>Payment History
+                </a>
+                <a href="{% url 'accounts:support' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+                    <i class="fas fa-headset mr-3 w-4"></i>Support
+                </a>
+            </div>
+            <!-- Settings Section -->
+            <div class="border-t border-gray-100 py-1">
+                <a href="{% url 'accounts:profile_edit' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-cog mr-3 w-4"></i>Settings
+                </a>
+                <a href="{% url 'accounts:change_password' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-lock mr-3 w-4"></i>Change Password
+                </a>
+            </div>
+            <!-- Logout -->
+            <div class="border-t border-gray-100 py-1">
+    <a href="{% url 'accounts:logout' %}"
+        class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+        <i class="fas fa-sign-out-alt mr-3 w-4"></i>Logout
+    </a>
+                                </div>
+                                </div>
+                                </div>
                     {% else %}
                         <a href="{% url 'accounts:login' %}"
                             class="text-gray-700 hover:text-green-600 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-green-50">
@@ -176,25 +246,65 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">FlexiFone</h3>
-                    <p class="mt-4 text-sm text-gray-600">Buy the latest phones on credit with flexible payment plans.</p>
+                    <p class="mt-4 text-sm text-gray-600">Buy the latest phones on credit with flexible payment plans. Build your credit
+                        while getting the phone you want.</p>
+                    <div class="mt-4 space-y-2">
+                        <div class="flex items-center text-xs text-gray-500">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <span>No upfront payment required</span>
+                        </div>
+                        <div class="flex items-center text-xs text-gray-500">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <span>Build credit with every payment</span>
+                        </div>
+                        <div class="flex items-center text-xs text-gray-500">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <span>Flexible payment terms</span>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">Products</h3>
                     <ul class="mt-4 space-y-2">
-                        <li><a href="#" class="text-sm text-gray-600 hover:text-green-600">Apple Phones</a></li>
-                        <li><a href="#" class="text-sm text-gray-600 hover:text-green-600">Samsung Phones</a></li>
-                        <li><a href="#" class="text-sm text-gray-600 hover:text-green-600">Google Phones</a></li>
+                        <li><a href="{% url 'phones:phone_list' %}?brand=APPLE"
+                                class="text-sm text-gray-600 hover:text-green-600 transition-colors">Apple Phones</a></li>
+                        <li><a href="{% url 'phones:phone_list' %}?brand=SAMSUNG"
+                                class="text-sm text-gray-600 hover:text-green-600 transition-colors">Samsung Phones</a></li>
+                        <li><a href="{% url 'phones:phone_list' %}?brand=HUAWEI"
+                                class="text-sm text-gray-600 hover:text-green-600 transition-colors">Huawei Phones</a></li>
+                        <li><a href="{% url 'phones:phone_list' %}?brand=TECNO"
+                                class="text-sm text-gray-600 hover:text-green-600 transition-colors">Tecno Phones</a></li>
+                        <li><a href="{% url 'phones:phone_list' %}?brand=INFINIX"
+                                class="text-sm text-gray-600 hover:text-green-600 transition-colors">Infinix Phones</a></li>
+                        <li><a href="{% url 'phones:phone_list' %}"
+                                class="text-sm text-green-600 hover:text-green-700 font-medium transition-colors">View All Phones →</a></li>
+                        </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">Credit Services</h3>
+                            <ul class="mt-4 space-y-2">
+                                <li><a href="{% url 'accounts:credit_building_dashboard' %}"
+                                        class="text-sm text-gray-600 hover:text-green-600 transition-colors">Credit Building</a></li>
+                                <li><a href="{% url 'accounts:credit_eligibility' %}"
+                                        class="text-sm text-gray-600 hover:text-green-600 transition-colors">Check Eligibility</a></li>
+                                <li><a href="{% url 'accounts:payment_history' %}"
+                                        class="text-sm text-gray-600 hover:text-green-600 transition-colors">Payment History</a></li>
+                                <li><a href="{% url 'phones:phone_list' %}?credit_filter=affordable"
+                                        class="text-sm text-gray-600 hover:text-green-600 transition-colors">Affordable Phones</a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">Support</h3>
                     <ul class="mt-4 space-y-2">
-                        <li><a href="{% url 'accounts:support' %}" class="text-sm text-gray-600 hover:text-green-600">Help Center</a></li>
-                        <li><a href="{% url 'accounts:credit_eligibility' %}" class="text-sm text-gray-600 hover:text-green-600">Credit Eligibility</a></li>
-                        <li><a href="#" class="text-sm text-gray-600 hover:text-green-600">Terms of Service</a></li>
+                        <li><a href="{% url 'accounts:support' %}" class="text-sm text-gray-600 hover:text-green-600 transition-colors">Help
+                                Center</a></li>
+                        <li><a href="{% url 'accounts:documents' %}"
+                                class="text-sm text-gray-600 hover:text-green-600 transition-colors">Documents</a></li>
+                        <li><a href="#" class="text-sm text-gray-600 hover:text-green-600 transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="text-sm text-gray-600 hover:text-green-600 transition-colors">Privacy Policy</a></li>
                     </ul>
                 </div>
                 <div>

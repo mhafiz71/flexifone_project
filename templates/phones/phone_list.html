@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load phone_tags %}
 
 {% block title %}Available Phones - FlexiFone{% endblock %}
 
@@ -68,8 +69,7 @@
                 <div class="flex justify-between items-start mb-3">
                     <h2 class="text-xl font-bold text-gray-900 leading-tight">{{ phone.name }}</h2>
                     <span
-                        class="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs font-semibold px-3 py-1 rounded-full">{{
-                        phone.get_brand_display }}</span>
+                        class="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs font-semibold px-3 py-1 rounded-full">{{ phone|phone_brand_or_default }}</span>
                 </div>
             
                 <!-- Price -->

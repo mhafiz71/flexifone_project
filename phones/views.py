@@ -12,32 +12,63 @@ def phone_list(request):
     brand = request.GET.get('brand')
     if brand:
         phones = phones.filter(brand=brand)
-    
+
+    # Add credit eligibility filter for authenticated users
+    credit_filter = request.GET.get('credit_filter')
+    user_credit_limit = 0
+    if request.user.is_authenticated:
+        user_credit_limit = request.user.get_available_credit_limit()
+        if credit_filter == 'affordable':
+            phones = phones.filter(price__lte=user_credit_limit)
+        elif credit_filter == 'aspirational':
+            phones = phones.filter(price__gt=user_credit_limit)
+
     paginator = Paginator(phones, 12)  # Show 12 phones per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     brands = Phone.BRAND_CHOICES
-    
+
     context = {
         'page_obj': page_obj,
         'brands': brands,
         'selected_brand': brand,
+        'credit_filter': credit_filter,
+        'user_credit_limit': user_credit_limit,
     }
     return render(request, 'phones/phone_list.html', context)
 
 def phone_detail(request, slug):
     # Only allow access to phones that are active AND have stock available
     phone = get_object_or_404(Phone, slug=slug, is_active=True, stock__gt=0)
-    
-    # Check if user is authenticated and has an existing credit account
-    has_credit_account = False
+
+    # Check if user is authenticated and has an active plan
+    has_active_plan = False
+    can_afford = False
+    credit_info = {}
+
     if request.user.is_authenticated:
-        has_credit_account = hasattr(request.user, 'credit_account')
-    
+        if hasattr(request.user, 'credit_account'):
+            has_active_plan = request.user.credit_account.is_plan_active()
+
+        # Check credit eligibility
+        can_afford = request.user.can_afford_phone(phone.price)
+        available_credit = request.user.get_available_credit_limit()
+
+        credit_info = {
+            'can_afford': can_afford,
+            'available_credit': available_credit,
+            'credit_limit': request.user.credit_limit,
+            'credit_tier': request.user.get_credit_tier_info(),
+            'is_eligible': request.user.is_eligible_for_credit(),
+            'needed_amount': max(0, phone.price - available_credit) if not can_afford else 0
+        }
+
     context = {
         'phone': phone,
-        'has_credit_account': has_credit_account
+        'has_active_plan': has_active_plan,
+        'can_afford': can_afford,
+        'credit_info': credit_info,
     }
     return render(request, 'phones/phone_detail.html', context)
 

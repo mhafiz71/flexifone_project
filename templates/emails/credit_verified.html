@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Application Verified - FlexiFone</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: #ffffff;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .header .emoji {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .good-news {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+        }
+        .good-news h2 {
+            color: #065f46;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .application-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .application-details h3 {
+            color: #1e40af;
+            margin-top: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .detail-value {
+            color: #374151;
+            font-weight: 500;
+        }
+        .next-steps {
+            background-color: #eff6ff;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .next-steps h3 {
+            color: #1e40af;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .steps-list {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .steps-list li {
+            counter-increment: step-counter;
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+            position: relative;
+        }
+        .steps-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: -15px;
+            top: 15px;
+            background: #10b981;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .support-info {
+            background-color: #fef3c7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid #f59e0b;
+            text-align: center;
+        }
+        .support-info h3 {
+            color: #92400e;
+            margin-top: 0;
+        }
+        .footer {
+            background-color: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #10b981;
+            text-decoration: none;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            .header {
+                padding: 20px 15px;
+            }
+            .content {
+                padding: 20px 15px;
+            }
+            .detail-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .steps-list li {
+                padding-left: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="emoji">✅</span>
+            <h1>Credit Application Verified!</h1>
+            <p>You're approved to proceed with payments</p>
+        </div>
+        
+        <div class="content">
+            <div class="good-news">
+                <h2>Great news, {{ user.first_name|default:user.username }}!</h2>
+                <p>Your credit application for the <strong>{{ application.phone.name }}</strong> has been verified and approved for payment processing.</p>
+                <p>You can now proceed with setting up your payment plan!</p>
+            </div>
+            
+            <div class="application-details">
+                <h3>📋 Application Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">📱 Phone:</span>
+                    <span class="detail-value">{{ application.phone.name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">💰 Price:</span>
+                    <span class="detail-value">₵{{ application.phone.price }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">💳 Loan Amount:</span>
+                    <span class="detail-value">₵{{ application.requested_loan_amount }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">📅 Installment Plan:</span>
+                    <span class="detail-value">{{ application.requested_installment_count }} months</span>
+                </div>
+            </div>
+            
+            <div class="next-steps">
+                <h3>🚀 Next Steps</h3>
+                <ol class="steps-list">
+                    <li>
+                        <strong>Log in to your FlexiFone account</strong><br>
+                        <small>Access your dashboard to manage your plan</small>
+                    </li>
+                    <li>
+                        <strong>Go to your dashboard</strong><br>
+                        <small>Find your verified credit application</small>
+                    </li>
+                    <li>
+                        <strong>Click "Proceed with Payment"</strong><br>
+                        <small>Set up your BNPL plan and payment method</small>
+                    </li>
+                </ol>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="http://127.0.0.1:8000/accounts/dashboard/" class="cta-button">
+                    💳 Set Up Payment Plan
+                </a>
+            </div>
+            
+            <div class="support-info">
+                <h3>💬 Need Help?</h3>
+                <p>If you have any questions about setting up your payment plan, our support team is here to help!</p>
+                <p>
+                    📧 <strong>Email:</strong> support@flexifone.com<br>
+                    📞 <strong>Phone:</strong> +233 XX XXX XXXX<br>
+                    🕒 <strong>Hours:</strong> Monday - Saturday, 9:00 AM - 6:00 PM
+                </p>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+                <p><strong>Thank you for choosing FlexiFone!</strong></p>
+                <p>We're excited to help you get your new device through our flexible payment plans.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>FlexiFone</strong> - Making phone ownership accessible for everyone</p>
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p><a href="#">Contact Support</a> | <a href="#">Privacy Policy</a></p>
+        </div>
+    </div>
+</body>
+</html>

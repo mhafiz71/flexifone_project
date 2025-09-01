@@ -1,13 +1,13 @@
 # accounts/views.py
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.contrib import messages
-from .forms import CustomUserCreationForm, CreditApplicationForm, UserProfileForm
+from .forms import CustomUserCreationForm, CreditApplicationForm, UserProfileForm, UserAddressForm, UserPreferencesForm, ProfilePictureForm
 from .models import CreditAccount, Transaction, CreditApplication
 from phones.models import Phone
 import stripe
@@ -21,6 +21,55 @@ import random
 import uuid
 from decimal import Decimal
 from .currency_utils import ghs_to_usd_cents, usd_cents_to_ghs, format_ghs_amount
+
+
+def send_html_email(subject, template_name, context, recipient_list, fail_silently=True):
+    """Send HTML email with text fallback using Gmail SMTP"""
+    try:
+        # Render HTML template
+        html_content = render_to_string(f'emails/{template_name}.html', context)
+
+        # Try to render text template as fallback
+        try:
+            text_content = render_to_string(f'emails/{template_name}.txt', context)
+        except:
+            # If no text template exists, create a simple text version
+            text_content = f"Please view this email in an HTML-capable email client.\n\nSubject: {subject}"
+
+        # Use EMAIL_FROM if available, otherwise DEFAULT_FROM_EMAIL
+        from_email = getattr(settings, 'EMAIL_FROM', settings.DEFAULT_FROM_EMAIL)
+
+        # Create email message
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=from_email,
+            to=recipient_list
+        )
+        email.attach_alternative(html_content, "text/html")
+
+        # Send email with enhanced error handling
+        try:
+            email.send(fail_silently=fail_silently)
+            print(f"✅ HTML Email sent successfully via Gmail SMTP")
+            print(f"   📧 To: {', '.join(recipient_list)}")
+            print(f"   📝 Subject: {subject}")
+            print(f"   📤 From: {from_email}")
+            return True
+        except Exception as e:
+            print(f"❌ Email sending failed: {e}")
+            print(f"   📧 To: {', '.join(recipient_list)}")
+            print(f"   📝 Subject: {subject}")
+            print(f"   📤 From: {from_email}")
+            if not fail_silently:
+                raise
+            return False
+
+    except Exception as e:
+        print(f"❌ Error preparing HTML email: {e}")
+        if not fail_silently:
+            raise
+        return False
 
 
 @login_required
@@ -113,11 +162,18 @@ def dashboard_view(request):
     # Show phones if user has no account OR if their plan is completed
     phones = Phone.objects.filter(is_active=True, stock__gt=0) if not credit_account or not is_active_plan else []
 
+    # Get user's credit applications (only those with valid phone references)
+    credit_applications = CreditApplication.objects.filter(
+        user=request.user,
+        phone__isnull=False
+    ).select_related('phone').order_by('-created_at')
+
     context = {
         'credit_account': credit_account,
         'transactions': transactions,
         'phones': phones,
         'is_active_plan': is_active_plan,
+        'credit_applications': credit_applications,
     }
     return render(request, 'dashboard.html', context)
 
@@ -200,19 +256,16 @@ def agreement_view(request, account_id):
         phone_name = account.phone.name if account.phone else "Unknown Phone"
         subject = f"Welcome to your FlexiFone Plan for the {phone_name}!"
 
-        # We can pass context to a text template
-        message = render_to_string('emails/welcome_email.txt', {
-            'user': request.user,
-            'account': account,
-        })
-
-        send_mail(
+        # Send HTML email
+        send_html_email(
             subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            template_name='welcome_email',
+            context={
+                'user': request.user,
+                'account': account,
+            },
             recipient_list=[request.user.email],
-            # Set to True in production if you don't want errors to stop the request
-            fail_silently=False,
+            fail_silently=True,
         )
 
         return redirect('accounts:dashboard')
@@ -238,57 +291,104 @@ def credit_application_view(request, phone_id):
 
     if request.method == 'POST':
         form = CreditApplicationForm(request.POST)
+        form.set_user(request.user)  # Set user for guarantor validation
         if form.is_valid():
             application = form.save(commit=False)
             application.user = request.user
             application.phone = phone
 
-            # Simple credit scoring logic
+            # Store guarantor information
+            application.guarantor_username = form.cleaned_data['guarantor_username']
+            application.guarantor_national_id = form.cleaned_data['guarantor_national_id']
+
+            # Validate guarantor and store validation result
+            guarantor_validation = request.user.validate_guarantor(
+                application.guarantor_username,
+                application.guarantor_national_id
+            )
+            application.guarantor_validated = guarantor_validation['valid']
+            application.guarantor_validation_notes = guarantor_validation.get('error', guarantor_validation.get('message', ''))
+
+            # Progressive Credit System Logic
             monthly_income = form.cleaned_data['monthly_income']
             monthly_expenses = form.cleaned_data['monthly_expenses']
-            # Convert Decimal to float for calculation
-            debt_to_income = (float(monthly_expenses) / float(monthly_income)) * 100
 
-            # Calculate credit score based on various factors
-            base_score = request.user.credit_score
-            # Convert Decimal to float before multiplication
-            income_score = min(100, (float(monthly_income) / 5000)
-                               * 100)  # Cap at ₵5000
-            dti_score = max(0, 100 - debt_to_income)  # Lower DTI is better
+            # Update user's income information
+            request.user.monthly_income = monthly_income
 
-            # Weighted average
-            new_score = int((base_score * 0.4) +
-                            (income_score * 0.3) + (dti_score * 0.3))
-            
-            # Store the credit score at time of application
-            application.credit_score_at_time_of_application = new_score
-            
-            # Store the requested loan amount
-            application.requested_loan_amount = phone.price
-            
-            # Store the requested installment count
-            application.requested_installment_count = form.cleaned_data.get('installment_count', 12)
+            # Update internal credit score based on current profile
+            request.user.update_internal_credit_score()
+            request.user.save()
 
-            # Simple approval logic
-            if new_score >= 650 and debt_to_income <= 50:
+            # Check if user can afford this phone with their current credit limit
+            phone_price = float(phone.price)  # Ensure it's a float for calculations
+            available_credit = float(request.user.get_available_credit_limit())  # Ensure it's a float
+
+            # Store application details
+            application.credit_score_at_time_of_application = request.user.internal_credit_score
+            application.requested_loan_amount = phone.price  # Keep original Decimal for storage
+            installment_count = int(form.cleaned_data.get('installment_count', 12))
+            application.requested_installment_count = installment_count
+
+            # Progressive approval logic - much more accessible!
+            debt_to_income = (float(monthly_expenses) / float(monthly_income)) * 100 if monthly_income > 0 else 100
+
+            # Check multiple approval criteria (user-friendly)
+            approval_reasons = []
+            decline_reasons = []
+
+            # Guarantor validation check (new requirement)
+            if application.guarantor_validated:
+                approval_reasons.append("Valid guarantor provided and verified")
+            else:
+                decline_reasons.append(f"Guarantor validation failed: {application.guarantor_validation_notes}")
+
+            # Basic eligibility check (now includes guarantor check)
+            if request.user.is_verified and request.user.profile_completion_percentage() >= 70 and request.user.internal_credit_score >= 50:
+                approval_reasons.append("Account verified and profile complete")
+            else:
+                decline_reasons.append("Complete your profile and verify your account first")
+
+            # Credit limit check
+            if available_credit >= phone_price:
+                approval_reasons.append(f"Phone price (₵{phone_price}) within your credit limit (₵{available_credit} available)")
+            else:
+                decline_reasons.append(f"Phone price (₵{phone_price}) exceeds your available credit limit (₵{available_credit})")
+
+            # Income check (more lenient) - Fix the division by ensuring proper types
+            monthly_payment = float(phone_price) / installment_count
+            if monthly_income >= monthly_payment * 2:  # Payment should be max 50% of income
+                approval_reasons.append("Sufficient income for monthly payments")
+            else:
+                decline_reasons.append(f"Monthly payment (₵{monthly_payment:.2f}) too high for income (₵{monthly_income})")
+
+            # Debt-to-income check (more lenient)
+            if debt_to_income <= 70:  # Increased from 50% to 70%
+                approval_reasons.append("Acceptable debt-to-income ratio")
+            else:
+                decline_reasons.append(f"Debt-to-income ratio too high ({debt_to_income:.1f}%)")
+
+            # Make decision
+            if len(decline_reasons) == 0:
                 application.status = CreditApplication.Status.APPROVED
-                application.decision_reason = "Approved based on credit score and debt-to-income ratio."
+                application.decision_reason = "Approved: " + "; ".join(approval_reasons)
             else:
                 application.status = CreditApplication.Status.DECLINED
-                application.decision_reason = f"Declined. Credit score: {new_score}, DTI: {debt_to_income:.1f}%"
+                application.decision_reason = "Declined: " + "; ".join(decline_reasons)
 
             application.save()
 
             if application.status == CreditApplication.Status.APPROVED:
                 messages.success(
-                    request, "Credit application approved! You can now proceed with your purchase.")
-                return redirect('accounts:bnpl_checkout', phone_id=phone_id)
+                    request, "Credit application approved! Your application is now pending verification before you can proceed with payments. You'll be notified when verification is complete.")
+                return redirect('accounts:dashboard')
             else:
                 messages.error(
                     request, f"Credit application declined. Reason: {application.decision_reason}")
                 return redirect('accounts:dashboard')
     else:
         form = CreditApplicationForm()
+        form.set_user(request.user)  # Set user for guarantor validation
 
     context = {
         'form': form,
@@ -322,6 +422,16 @@ def embedded_payment_view(request):
         messages.error(request, "You don't have an active credit account.")
         return redirect('accounts:dashboard')
 
+    # Block payments for pending approval plans
+    if credit_account.status == CreditAccount.Status.PENDING:
+        messages.error(request, "Your plan is pending approval. Payments are not allowed until your plan is approved by our team.")
+        return redirect('accounts:dashboard')
+
+    # Block payments for declined plans
+    if credit_account.status == CreditAccount.Status.DECLINED:
+        messages.error(request, "Your plan has been declined. Please contact support for assistance.")
+        return redirect('accounts:dashboard')
+
     context = {
         'credit_account': credit_account,
         'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY
@@ -342,6 +452,10 @@ def create_payment_intent(request):
             credit_account = request.user.credit_account
             print(
                 f"Credit account: {credit_account.id} for user: {request.user.username}")
+
+            # Block payment intent creation for pending or declined plans
+            if credit_account.status in [CreditAccount.Status.PENDING, CreditAccount.Status.DECLINED]:
+                return JsonResponse({'error': 'Payment not allowed for plans with pending or declined status'}, status=400)
 
             payment_intent = stripe.PaymentIntent.create(
                 amount=amount_usd_cents,
@@ -426,9 +540,9 @@ def process_payment_success(request, payment_intent):
 
         print(f"Amount paid: ₵{amount_paid}")
 
-        # Update account balance
+        # Record payment success and update credit metrics
         old_balance = account.balance
-        account.balance += amount_paid
+        upgrade_result = account.record_payment_success(amount_paid)
         print(f"Updated balance from ₵{old_balance} to ₵{account.balance}")
 
         # Create transaction record
@@ -442,6 +556,14 @@ def process_payment_success(request, payment_intent):
             description=f"Payment for {phone_name}"
         )
         print(f"Created transaction: {transaction.id}")
+
+        # Notify user of credit tier upgrade if it happened
+        if upgrade_result.get('upgraded'):
+            old_tier = upgrade_result['old_tier']
+            new_tier = upgrade_result['new_tier']
+            new_limit = upgrade_result['new_limit']
+            print(f"User {account.user.username} upgraded from {old_tier} to {new_tier}")
+            # We'll show this message in the dashboard
         
         # Prepare result data
         phone_name = account.phone.name if account.phone else "Unknown Phone"
@@ -462,14 +584,13 @@ def process_payment_success(request, payment_intent):
 
                 # Send plan completion notification (not pickup notification yet)
                 subject = f"🎉 Congratulations! Your {phone_name} plan is complete!"
-                message = render_to_string('emails/plan_completed.txt', {
-                    'user': account.user,
-                    'account': account,
-                })
-                send_mail(
+                send_html_email(
                     subject=subject,
-                    message=message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    template_name='plan_completed',
+                    context={
+                        'user': account.user,
+                        'account': account,
+                    },
                     recipient_list=[account.user.email],
                     fail_silently=True,
                 )
@@ -670,16 +791,24 @@ def bnpl_checkout_view(request, phone_id):
 
     phone = get_object_or_404(Phone, id=phone_id)
 
-    # Check if user has an approved credit application
+    # Check if user has an approved and verified credit application
     credit_app = CreditApplication.objects.filter(
         user=request.user,
         phone=phone,
-        status=CreditApplication.Status.APPROVED
+        status__in=[CreditApplication.Status.APPROVED, CreditApplication.Status.VERIFIED]
     ).first()
 
     if not credit_app:
         messages.error(request, "You need to apply for credit first.")
         return redirect('accounts:credit_application', phone_id=phone_id)
+
+    # Check if the application is verified for payment
+    if not credit_app.can_make_payments():
+        if credit_app.status == CreditApplication.Status.APPROVED:
+            messages.warning(request, "Your credit application is approved but pending verification. You'll be notified when you can proceed with payments.")
+        else:
+            messages.error(request, "Your credit application is not yet verified for payments.")
+        return redirect('accounts:dashboard')
 
     # Create a Stripe Customer if one doesn't exist
     if not request.user.stripe_customer_id:
@@ -698,9 +827,9 @@ def bnpl_checkout_view(request, phone_id):
         account_type=CreditAccount.AccountType.CREDIT,
         status=CreditAccount.Status.ACTIVE,  # Still 'Active' until card is saved
         loan_amount=phone.price,
-        installment_count=credit_app.installment_count,
+        installment_count=credit_app.requested_installment_count,
         installment_amount=round(
-            phone.price / credit_app.installment_count, 2),
+            phone.price / credit_app.requested_installment_count, 2),
         interest_rate=phone.interest_rate,
     )
 
@@ -760,6 +889,10 @@ def create_customer_portal_session(request):
 
 @staff_member_required
 def business_dashboard_view(request):
+    from django.db.models import Sum, Avg, Count, Q
+    from django.utils import timezone
+    from datetime import timedelta
+
     # Calculate raw counts for charts
     active_savings_count = CreditAccount.objects.filter(
         account_type='SAVINGS', status='ACTIVE').count()
@@ -774,7 +907,58 @@ def business_dashboard_view(request):
     default_rate = (overdue_count / active_bnpl_count *
                     100) if active_bnpl_count > 0 else 0
 
+    # Financial Analytics
+    total_loan_value = CreditAccount.objects.filter(
+        account_type='CREDIT',
+        loan_amount__isnull=False
+    ).aggregate(total=Sum('loan_amount'))['total'] or 0
+
+    total_payments_received = Transaction.objects.filter(
+        transaction_type='PAYMENT'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Calculate outstanding balance correctly
+    credit_accounts = CreditAccount.objects.filter(
+        status__in=['REPAYING', 'OVERDUE'],
+        loan_amount__isnull=False
+    )
+    outstanding_balance = 0
+    for account in credit_accounts:
+        if account.loan_amount and account.balance:
+            remaining = account.loan_amount - account.balance
+            outstanding_balance += max(0, remaining)
+
+    # Calculate total amount paid (balance represents amount paid, not remaining)
+    total_amount_paid = CreditAccount.objects.filter(
+        account_type='CREDIT',
+        balance__isnull=False
+    ).aggregate(total=Sum('balance'))['total'] or 0
+
+    # Credit Building Analytics
+    credit_tier_distribution = User.objects.values('credit_tier').annotate(
+        count=Count('id')
+    ).order_by('credit_tier')
+
+    avg_credit_score = User.objects.filter(
+        internal_credit_score__gt=0
+    ).aggregate(avg=Avg('internal_credit_score'))['avg'] or 0
+
+    # Time-based Analytics (last 30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    new_users_30d = User.objects.filter(date_joined__gte=thirty_days_ago).count()
+    new_applications_30d = CreditApplication.objects.filter(
+        created_at__gte=thirty_days_ago
+    ).count()
+
+    # Phone Analytics
+    popular_phones = CreditAccount.objects.filter(
+        phone__isnull=False
+    ).values('phone__brand').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5]
+
     context = {
+        # Basic Metrics
         'total_users': User.objects.count(),
         'verified_users': User.objects.filter(is_verified=True).count(),
         'active_savings_plans': active_savings_count,
@@ -783,6 +967,21 @@ def business_dashboard_view(request):
         'default_rate': f"{default_rate:.2f}%",
         'total_paid_off': paid_off_count + completed_count,
 
+        # Financial Metrics
+        'total_loan_value': total_loan_value,
+        'total_payments_received': total_amount_paid,  # Use actual payments made
+        'outstanding_balance': outstanding_balance,
+        'collection_rate': f"{(float(total_amount_paid) / float(total_loan_value) * 100) if total_loan_value > 0 else 0:.1f}%",
+
+        # Credit Building Metrics
+        'avg_credit_score': f"{avg_credit_score:.0f}",
+        'credit_tier_distribution': credit_tier_distribution,
+
+        # Growth Metrics
+        'new_users_30d': new_users_30d,
+        'new_applications_30d': new_applications_30d,
+        'popular_phones': popular_phones,
+
         # --- Data specifically for Chart.js ---
         'chart_data': {
             'plan_status_labels': ['Active Savings', 'Active BNPL', 'Paid Off/Completed'],
@@ -790,6 +989,14 @@ def business_dashboard_view(request):
 
             'bnpl_health_labels': ['Currently Repaying', 'Overdue'],
             'bnpl_health_data': [repaying_count, overdue_count],
+
+            # Credit Tier Distribution
+            'credit_tier_labels': [tier['credit_tier'] for tier in credit_tier_distribution],
+            'credit_tier_data': [tier['count'] for tier in credit_tier_distribution],
+
+            # Popular Phone Brands
+            'phone_brand_labels': [phone['phone__brand'] for phone in popular_phones],
+            'phone_brand_data': [phone['count'] for phone in popular_phones],
         }
     }
     
@@ -1126,3 +1333,239 @@ def cancel_plan_view(request):
         return redirect('accounts:dashboard')
     
     return render(request, 'cancel_plan.html', {'credit_account': credit_account})
+
+
+@staff_member_required
+def credit_applications_view(request):
+    """View for managing credit applications and verification"""
+    # Get applications that need verification
+    approved_applications = CreditApplication.objects.filter(
+        status=CreditApplication.Status.APPROVED
+    ).select_related('user', 'phone').order_by('-created_at')
+
+    # Get verified applications
+    verified_applications = CreditApplication.objects.filter(
+        status=CreditApplication.Status.VERIFIED
+    ).select_related('user', 'phone', 'verified_by').order_by('-verified_at')
+
+    context = {
+        'approved_applications': approved_applications,
+        'verified_applications': verified_applications,
+    }
+
+    return render(request, 'admin/credit_applications.html', context)
+
+
+@staff_member_required
+def verify_credit_application_view(request, application_id):
+    """Verify a credit application for payment processing"""
+    if request.method == 'POST':
+        application = get_object_or_404(CreditApplication, id=application_id)
+        verification_notes = request.POST.get('verification_notes', '')
+
+        if application.verify_for_payment(request.user, verification_notes):
+            messages.success(request, f"Credit application for {application.user.username} has been verified for payment processing.")
+
+            # Send notification email to user
+            phone_name = application.phone.name if application.phone else "your selected phone"
+            subject = f"Your credit application for {phone_name} is verified!"
+            send_html_email(
+                subject=subject,
+                template_name='credit_verified',
+                context={
+                    'user': application.user,
+                    'application': application,
+                },
+                recipient_list=[application.user.email],
+                fail_silently=True,
+            )
+        else:
+            messages.error(request, "Failed to verify the credit application.")
+
+    return redirect('accounts:credit_applications')
+
+
+@staff_member_required
+def test_email_view(request):
+    """Test email sending functionality"""
+    if request.method == 'POST':
+        test_email = request.POST.get('test_email', 'test@example.com')
+
+        # Send test email
+        success = send_html_email(
+            subject="FlexiFone Email Test",
+            template_name='credit_verified',  # Using existing template
+            context={
+                'user': request.user,
+                'application': {
+                    'phone': {'name': 'Test Phone', 'price': '1000'},
+                    'requested_loan_amount': '800',
+                    'requested_installment_count': 12
+                }
+            },
+            recipient_list=[test_email],
+            fail_silently=False
+        )
+
+        if success:
+            messages.success(request, f"Test email sent successfully to {test_email}")
+        else:
+            messages.error(request, f"Failed to send test email to {test_email}")
+
+    return render(request, 'admin/test_email.html')
+
+
+# Profile Views
+@login_required
+def profile_view(request):
+    """Display user profile information"""
+    context = {
+        'user': request.user,
+        'profile_completion': request.user.profile_completion_percentage(),
+        'age': request.user.get_age(),
+        'full_address': request.user.get_full_address(),
+    }
+    return render(request, 'accounts/profile.html', context)
+
+
+@login_required
+def profile_edit_view(request):
+    """Edit user profile information"""
+    if request.method == 'POST':
+        profile_form = UserProfileForm(request.POST, instance=request.user)
+        address_form = UserAddressForm(request.POST, instance=request.user)
+        preferences_form = UserPreferencesForm(request.POST, instance=request.user)
+
+        if profile_form.is_valid() and address_form.is_valid() and preferences_form.is_valid():
+            profile_form.save()
+            address_form.save()
+            preferences_form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('accounts:profile')
+    else:
+        profile_form = UserProfileForm(instance=request.user)
+        address_form = UserAddressForm(instance=request.user)
+        preferences_form = UserPreferencesForm(instance=request.user)
+
+    context = {
+        'profile_form': profile_form,
+        'address_form': address_form,
+        'preferences_form': preferences_form,
+        'profile_completion': request.user.profile_completion_percentage(),
+    }
+    return render(request, 'accounts/profile_edit.html', context)
+
+
+@login_required
+def profile_picture_view(request):
+    """Upload or update profile picture"""
+    if request.method == 'POST':
+        # Check if user wants to remove the picture
+        if request.POST.get('remove_picture'):
+            if request.user.profile_picture:
+                request.user.profile_picture.delete()
+                request.user.profile_picture = None
+                request.user.save()
+                messages.success(request, 'Your profile picture has been removed successfully!')
+            return redirect('accounts:profile')
+
+        # Handle picture upload
+        form = ProfilePictureForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile picture has been updated successfully!')
+            return redirect('accounts:profile')
+    else:
+        form = ProfilePictureForm(instance=request.user)
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/profile_picture.html', context)
+
+
+@login_required
+def change_password_view(request):
+    """Change user password"""
+    from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import update_session_auth_hash
+
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important!
+            messages.success(request, 'Your password has been changed successfully!')
+            return redirect('accounts:profile')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/change_password.html', context)
+
+
+@login_required
+def credit_building_dashboard_view(request):
+    """Display user's credit building progress and tier information"""
+    user = request.user
+
+    # Update internal credit score
+    user.update_internal_credit_score()
+
+    # Get credit progress information
+    credit_progress = user.get_credit_progress()
+    tier_info = user.get_credit_tier_info()
+
+    # Get available phones based on credit limit
+    from phones.models import Phone
+    available_phones = Phone.objects.filter(
+        price__lte=user.get_available_credit_limit(),
+        is_available=True
+    ).order_by('price')
+
+    # Get phones in next tier (aspirational)
+    next_tier_phones = []
+    if credit_progress.get('next_tier'):
+        next_tier_info = {
+            user.CreditTier.BRONZE: {'min_limit': 1000, 'max_limit': 2500},
+            user.CreditTier.SILVER: {'min_limit': 2500, 'max_limit': 5000},
+            user.CreditTier.GOLD: {'min_limit': 5000, 'max_limit': 10000},
+            user.CreditTier.PLATINUM: {'min_limit': 10000, 'max_limit': 50000},
+        }.get(credit_progress['next_tier'], {'min_limit': 0, 'max_limit': 0})
+
+        next_tier_phones = Phone.objects.filter(
+            price__gt=user.get_available_credit_limit(),
+            price__lte=next_tier_info['max_limit'],
+            is_available=True
+        ).order_by('price')[:3]  # Show top 3 aspirational phones
+
+    # Calculate credit utilization
+    try:
+        current_usage = user.credit_account.remaining_balance if hasattr(user, 'credit_account') else 0
+        credit_utilization = (current_usage / user.credit_limit * 100) if user.credit_limit > 0 else 0
+    except:
+        current_usage = 0
+        credit_utilization = 0
+
+    # Get recent payment history
+    recent_payments = []
+    if hasattr(user, 'credit_account'):
+        recent_payments = user.credit_account.transactions.filter(
+            transaction_type='PAYMENT'
+        ).order_by('-timestamp')[:5]
+
+    context = {
+        'user': user,
+        'credit_progress': credit_progress,
+        'tier_info': tier_info,
+        'available_phones': available_phones,
+        'next_tier_phones': next_tier_phones,
+        'current_usage': current_usage,
+        'credit_utilization': credit_utilization,
+        'recent_payments': recent_payments,
+        'available_credit': user.get_available_credit_limit(),
+    }
+
+    return render(request, 'accounts/credit_building_dashboard.html', context)

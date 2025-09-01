@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to FlexiFone</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: #ffffff;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .welcome-message {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .welcome-message h2 {
+            color: #10b981;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .plan-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #10b981;
+        }
+        .plan-details h3 {
+            color: #374151;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .detail-value {
+            color: #374151;
+            font-weight: 500;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .next-steps {
+            background-color: #eff6ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .next-steps h3 {
+            color: #1e40af;
+            margin-top: 0;
+        }
+        .next-steps ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .next-steps li {
+            margin: 8px 0;
+            color: #374151;
+        }
+        .footer {
+            background-color: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #10b981;
+            text-decoration: none;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #6b7280;
+            text-decoration: none;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            .header {
+                padding: 20px 15px;
+            }
+            .content {
+                padding: 20px 15px;
+            }
+            .detail-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Welcome to FlexiFone!</h1>
+            <p>Your journey to owning your dream phone starts now</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-message">
+                <h2>Hi {{ user.first_name|default:user.username }}!</h2>
+                <p>Thank you for choosing FlexiFone. Your plan has been successfully set up and you're ready to start your journey towards owning your new device.</p>
+            </div>
+            
+            <div class="plan-details">
+                <h3>📱 Your Plan Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Device:</span>
+                    <span class="detail-value">{{ account.phone.name|default:"Your selected phone" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Plan Type:</span>
+                    <span class="detail-value">
+                        {% if account.account_type == 'SAVINGS' %}
+                            Save-to-Own Plan
+                        {% else %}
+                            Buy Now, Pay Later
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Price:</span>
+                    <span class="detail-value">₵{{ account.phone.price|default:"0.00" }}</span>
+                </div>
+                {% if account.account_type == 'CREDIT' %}
+                <div class="detail-row">
+                    <span class="detail-label">Monthly Payment:</span>
+                    <span class="detail-value">₵{{ account.installment_amount|default:"0.00" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Next Payment Due:</span>
+                    <span class="detail-value">{{ account.next_payment_due_date|date:"F d, Y"|default:"TBD" }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="next-steps">
+                <h3>🚀 Next Steps</h3>
+                <ul>
+                    <li><strong>Log in to your dashboard</strong> to track your progress</li>
+                    {% if account.account_type == 'SAVINGS' %}
+                    <li><strong>Make your first payment</strong> to start saving towards your device</li>
+                    {% else %}
+                    <li><strong>Set up automatic payments</strong> for convenience</li>
+                    {% endif %}
+                    <li><strong>Monitor your balance</strong> and payment history</li>
+                    <li><strong>Get notified</strong> when your device is ready for pickup</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="http://127.0.0.1:8000/accounts/dashboard/" class="cta-button">
+                    📊 View Your Dashboard
+                </a>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p><strong>Need help?</strong> Our support team is here for you:</p>
+                <p>📧 Email: support@flexifone.com<br>
+                📞 Phone: +233 XX XXX XXXX<br>
+                🕒 Hours: Monday - Saturday, 9:00 AM - 6:00 PM</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>FlexiFone</strong> - Making phone ownership accessible for everyone</p>
+            <div class="social-links">
+                <a href="#">Facebook</a> |
+                <a href="#">Twitter</a> |
+                <a href="#">Instagram</a>
+            </div>
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p><a href="#">Unsubscribe</a> | <a href="#">Privacy Policy</a></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -104,6 +104,13 @@ USD_TO_GHS_RATE = config('USD_TO_GHS_RATE', default=12.0, cast=float)  # Example
 
 # Email Configuration
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@flexifone.com')
+EMAIL_FROM = config('EMAIL_FROM', default=DEFAULT_FROM_EMAIL)
+EMAIL_HOST = config('EMAIL_HOST', default='localhost')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
 # SMS Configuration (Arkesel)
 ARKESEL_API_KEY = config('ARKESEL_API_KEY', default='')

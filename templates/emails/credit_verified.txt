@@ -1,0 +1,24 @@
+Great news, {{ user.first_name|default:user.username }}!
+
+Your credit application for the {{ application.phone.name }} has been verified and approved for payment processing.
+
+Application Details:
+- Phone: {{ application.phone.name }}
+- Price: ₵{{ application.phone.price }}
+- Loan Amount: ₵{{ application.requested_loan_amount }}
+- Installment Plan: {{ application.requested_installment_count }} months
+
+You can now proceed with setting up your payment plan and making your first payment.
+
+Next Steps:
+1. Log in to your FlexiFone account
+2. Go to your dashboard
+3. Click "Proceed with Payment" to set up your BNPL plan
+
+If you have any questions, please don't hesitate to contact our support team.
+
+Best regards,
+The FlexiFone Team
+
+---
+This is an automated message. Please do not reply to this email.

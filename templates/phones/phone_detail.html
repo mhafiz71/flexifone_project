@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load phone_tags %}
 
-{% block title %}{{ phone.brand }} {{ phone.name }} - FlexiFone{% endblock %}
+{% block title %}{{ phone|phone_brand_or_default }} {{ phone.name }} - FlexiFone{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
@@ -15,7 +16,7 @@
             <li>
                 <div class="flex items-center">
                     <i class="fas fa-chevron-right text-gray-400 mx-2 text-sm"></i>
-                    <span class="text-gray-500">{{ phone.get_brand_display }}</span>
+                    <span class="text-gray-500">{{ phone|phone_brand_or_default }}</span>
                 </div>
             </li>
             <li aria-current="page">
@@ -59,7 +60,7 @@
                 <div class="flex justify-between items-start mb-4">
                     <h1 class="text-3xl font-bold text-gray-900">{{ phone.name }}</h1>
                     <span class="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">
-                        {{ phone.get_brand_display }}
+                        {{ phone|phone_brand_or_default }}
                     </span>
                 </div>
                 
@@ -110,7 +111,7 @@
                 
                 <!-- Action Buttons -->
                 <div class="flex flex-col space-y-4">
-                    {% if user.is_authenticated and not has_credit_account %}
+                    {% if user.is_authenticated and not has_active_plan %}
                         <div class="flex space-x-4">
                             <a href="{% url 'phones:buy_on_credit' phone.slug %}" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
                                 <i class="fas fa-credit-card mr-2"></i>Buy on Credit
@@ -119,10 +120,20 @@
                                 <i class="fas fa-piggy-bank mr-2"></i>Save to Own
                             </a>
                         </div>
-                    {% elif user.is_authenticated and has_credit_account %}
+                        {% if user.credit_account %}
+                        <p class="text-sm text-gray-600 text-center">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Starting a new plan. Your previous plan history will be preserved.
+                        </p>
+                        {% endif %}
+                        {% elif user.is_authenticated and has_active_plan %}
                         <button disabled class="w-full bg-gray-400 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md cursor-not-allowed">
-                            <i class="fas fa-credit-card mr-2"></i>Already Have a Plan
+                            <i class="fas fa-credit-card mr-2"></i>Complete Current Plan First
                         </button>
+                        <p class="text-sm text-gray-600 text-center">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            You have an active plan. Complete it before selecting a new phone.
+                        </p>
                     {% else %}
                         <a href="{% url 'accounts:login' %}" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg text-center font-medium shadow-md transition-all duration-200">
                             <i class="fas fa-sign-in-alt mr-2"></i>Login to Buy

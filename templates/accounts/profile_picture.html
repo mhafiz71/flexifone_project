@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Update Profile Picture - FlexiFone{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mb-4">
+                <i class="fas fa-camera text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Update Profile Picture</h1>
+            <p class="text-lg text-gray-600">Upload a new profile picture to personalize your account</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <!-- Current Profile Picture -->
+            <div class="text-center mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Current Profile Picture</h3>
+                <div class="relative inline-block">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200">
+                    {% else %}
+                        <div class="w-32 h-32 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center border-4 border-gray-200">
+                            <span class="text-white text-4xl font-bold">{{ user.first_name|first|upper|default:user.username|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="{{ form.profile_picture.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Choose New Profile Picture
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-green-400 transition-colors">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="{{ form.profile_picture.id_for_label }}" class="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500">
+                                    <span>Upload a file</span>
+                                    {{ form.profile_picture }}
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                        </div>
+                    </div>
+                    {% if form.profile_picture.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.profile_picture.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Image Preview -->
+                <div id="image-preview" class="hidden">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Preview</h4>
+                    <div class="flex justify-center">
+                        <img id="preview-image" class="w-32 h-32 rounded-full object-cover border-4 border-green-200" alt="Preview">
+                    </div>
+                </div>
+
+                <!-- Guidelines -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Profile Picture Guidelines</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Use a clear, high-quality image</li>
+                                    <li>Square images work best (1:1 aspect ratio)</li>
+                                    <li>Face should be clearly visible</li>
+                                    <li>Maximum file size: 10MB</li>
+                                    <li>Supported formats: JPG, PNG, GIF</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-end pt-6">
+                    <a href="{% url 'accounts:profile' %}" class="w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-center">
+                        Cancel
+                    </a>
+                    {% if user.profile_picture %}
+                    <button type="button" onclick="removeProfilePicture()" class="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Remove Current
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg">
+                        <i class="fas fa-upload mr-2"></i>Upload Picture
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Image preview functionality
+document.getElementById('{{ form.profile_picture.id_for_label }}').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-image').src = e.target.result;
+            document.getElementById('image-preview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('image-preview').classList.add('hidden');
+    }
+});
+
+// Remove profile picture function
+function removeProfilePicture() {
+    if (confirm('Are you sure you want to remove your current profile picture?')) {
+        // Create a form to remove the profile picture
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "accounts:profile_picture" %}';
+        
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        
+        const removeField = document.createElement('input');
+        removeField.type = 'hidden';
+        removeField.name = 'remove_picture';
+        removeField.value = 'true';
+        
+        form.appendChild(csrfToken);
+        form.appendChild(removeField);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

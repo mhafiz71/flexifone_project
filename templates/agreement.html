@@ -26,7 +26,7 @@
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">{{ account.phone.name|default:"Unknown Phone" }}
                         </h3>
-                        <p class="text-sm text-gray-600">{{ account.phone.brand|default:"Unknown Brand" }}</p>
+                        <p class="text-sm text-gray-600">{{ account.phone.get_brand_display|default:"Unknown Brand" }}</p>
                     </div>
                 </div>
                 <div class="text-right">

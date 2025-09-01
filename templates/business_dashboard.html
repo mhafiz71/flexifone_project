@@ -3,73 +3,291 @@
 
 {% block title %}Business Intelligence Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .kpi-card {
+        transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .chart-container {
+        transition: all 0.3s ease;
+    }
+
+    .chart-container:hover {
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Business Intelligence Dashboard</h1>
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Business Intelligence Dashboard</h1>
+            <p class="text-gray-600 mt-2">Real-time insights into FlexiFone's performance and growth</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">Last Updated</p>
+                    <p class="text-sm font-medium text-gray-900">{{ "now"|date:"M d, Y H:i" }}</p>
+                </div>
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            </div>
     </div>
 
-    <!-- KPI Cards -->
+    <!-- Primary KPI Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Card 1: Total Users -->
-        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 class="text-sm font-medium text-gray-500">Total Users</h3>
-            <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_users }}</p>
-            <div class="mt-2">
-                <span class="text-xs text-gray-500">{{ verified_users }} verified</span>
-            </div>
-        </div>
-        <!-- Card 2: Active Plans -->
-        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 class="text-sm font-medium text-gray-500">Active Plans</h3>
-            <p class="text-3xl font-bold text-gray-900 mt-1">{{ active_savings_plans }} / {{ active_bnpl_plans }}</p>
-            <div class="mt-2">
-                <span class="text-xs text-gray-500">Savings / BNPL</span>
-            </div>
-        </div>
-        <!-- Card 3: Overdue Accounts -->
-        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 class="text-sm font-medium text-gray-500">Overdue BNPL Accounts</h3>
-            <p class="text-3xl font-bold text-red-600 mt-1">{{ overdue_plans }}</p>
-            <div class="mt-2">
-                <span class="text-xs text-gray-500">Requires attention</span>
-            </div>
-        </div>
+        <div
+            class="kpi-card animate-fade-in-up bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-md border border-blue-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-blue-700">Total Users</h3>
+                    <p class="text-3xl font-bold text-blue-900 mt-1">{{ total_users }}</p>
+                    <div class="mt-2">
+                        <span class="text-xs text-blue-600">{{ verified_users }} verified</span>
+                        </div>
+                        </div>
+                <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-white text-xl"></i>
+                </div>
+                </div>
+                </div>
+                
+                <!-- Card 2: Total Loan Value -->
+                <div
+                    class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-md border border-green-200 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-green-700">Total Loan Value</h3>
+                            <p class="text-3xl font-bold text-green-900 mt-1">₵{{ total_loan_value|floatformat:0 }}</p>
+                            <div class="mt-2">
+                        <span class="text-xs text-green-600">{{ collection_rate }} collected</span>
+                        </div>
+                        </div>
+                <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-money-bill-wave text-white text-xl"></i>
+                </div>
+                </div>
+                </div>
+                
+                <!-- Card 3: Active Plans -->
+                <div
+                    class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-md border border-purple-200 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-purple-700">Active Plans</h3>
+                            <p class="text-3xl font-bold text-purple-900 mt-1">{{ active_savings_plans }} / {{ active_bnpl_plans }}</p>
+                            <div class="mt-2">
+                        <span class="text-xs text-purple-600">Savings / BNPL</span>
+                        </div>
+                        </div>
+                <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                </div>
+                </div>
+
         <!-- Card 4: Default Rate -->
-        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 class="text-sm font-medium text-gray-500">BNPL Default Rate</h3>
-            <p class="text-3xl font-bold text-red-600 mt-1">{{ default_rate }}</p>
-            <div class="mt-2">
-                <span class="text-xs text-gray-500">Of active BNPL plans</span>
+        <div
+            class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl shadow-md border border-red-200 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-red-700">Default Rate</h3>
+                    <p class="text-3xl font-bold text-red-900 mt-1">{{ default_rate }}</p>
+                    <div class="mt-2">
+                        <span class="text-xs text-red-600">{{ overdue_plans }} overdue</span>
+                        </div>
+                        </div>
+                        <div class="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-white text-xl"></i>
+                        </div>
+                        </div>
+                        </div>
+                        </div>
+                        
+                        <!-- Secondary KPI Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <!-- Growth Metrics -->
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-700">New Users (30d)</h3>
+                                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ new_users_30d }}</p>
+                                    </div>
+                                    <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-user-plus text-indigo-600"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-700">New Applications (30d)</h3>
+                                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ new_applications_30d }}</p>
+                                    </div>
+                                    <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-file-alt text-yellow-600"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-700">Avg Credit Score</h3>
+                                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ avg_credit_score }}</p>
+                                    </div>
+                                    <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-star text-teal-600"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-700">Outstanding Balance</h3>
+                                        <p class="text-2xl font-bold text-gray-900 mt-1">₵{{ outstanding_balance|floatformat:0 }}</p>
+                                    </div>
+                                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-balance-scale text-orange-600"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Charts Section -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div class="chart-container bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">Plan Distribution</h3>
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-chart-pie text-blue-600"></i>
+                                    </div>
+                                </div>
+                                <canvas id="planStatusChart" class="w-full h-64"></canvas>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">BNPL Portfolio Health</h3>
+                                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-heartbeat text-red-600"></i>
+                                    </div>
+                                </div>
+                                <canvas id="bnplHealthChart" class="w-full h-64"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Charts -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">Credit Tier Distribution</h3>
+                                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-layer-group text-purple-600"></i>
+                                    </div>
+                                </div>
+                                <canvas id="creditTierChart" class="w-full h-64"></canvas>
+                            </div>
+                        
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">Popular Phone Brands</h3>
+                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-mobile-alt text-green-600"></i>
+                                    </div>
             </div>
+            <canvas id="phoneBrandChart" class="w-full h-64"></canvas>
         </div>
     </div>
 
-    <!-- Charts -->
+    <!-- Business Insights & Popular Phones -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Business Insights -->
         <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 class="text-lg font-semibold mb-4">Overall Plan Distribution</h3>
-            <canvas id="planStatusChart" class="w-full h-64"></canvas>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 class="text-lg font-semibold mb-4">BNPL Portfolio Health</h3>
-            <canvas id="bnplHealthChart" class="w-full h-64"></canvas>
-        </div>
-    </div>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Business Insights</h3>
+                <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-lightbulb text-indigo-600"></i>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 class="text-sm font-semibold text-blue-800 mb-2">Customer Growth</h4>
+                    <p class="text-sm text-blue-700">{{ new_users_30d }} new users joined in the last 30 days, with {{
+                        verified_users }} total verified accounts.</p>
+                </div>
+                <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h4 class="text-sm font-semibold text-green-800 mb-2">Financial Performance</h4>
+                    {% if total_loan_value > 0 %}
+                    <p class="text-sm text-green-700">₵{{ total_payments_received|floatformat:0 }} collected from ₵{{
+                        total_loan_value|floatformat:0 }} total loans ({{ collection_rate }}).</p>
+                    {% else %}
+                    <p class="text-sm text-green-700">No loan data available yet. Start by approving credit applications!</p>
+                    {% endif %}
+                </div>
+                <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <h4 class="text-sm font-semibold text-purple-800 mb-2">Credit Building Success</h4>
+                    {% if avg_credit_score != "0" %}
+                    <p class="text-sm text-purple-700">Average internal credit score is {{ avg_credit_score }}, showing healthy
+                        credit building progress.</p>
+                    {% else %}
+                    <p class="text-sm text-purple-700">Credit building system ready. Users will start building credit with their
+                        first payments.</p>
+                    {% endif %}
+                </div>
+            </div>
+            </div>
 
-    <!-- Recent Activity -->
-    <div class="mt-8">
+        <!-- Popular Phones List -->
         <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 class="text-lg font-semibold mb-4">Business Insights</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Customer Acquisition</h4>
-                    <p class="text-sm text-gray-600">Total of {{ total_users }} users with {{ verified_users }} verified accounts.</p>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Top Phone Brands</h3>
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-trophy text-green-600"></i>
                 </div>
-                <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Portfolio Performance</h4>
-                    <p class="text-sm text-gray-600">{{ total_paid_off }} plans successfully completed with {{ overdue_plans }} currently overdue.</p>
+            </div>
+            <div class="space-y-3">
+                {% for phone in popular_phones %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center">
+                        <div
+                            class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-white text-sm font-bold">{{ forloop.counter }}</span>
+                        </div>
+                        <span class="font-medium text-gray-900">{{ phone.phone__brand|title }}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-lg font-bold text-gray-900">{{ phone.count }}</span>
+                        <p class="text-xs text-gray-500">plans</p>
+                    </div>
                 </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">No phone data available</p>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -140,6 +358,84 @@ document.addEventListener('DOMContentLoaded', function () {
             responsive: true,
             plugins: {
                 legend: { position: 'top' },
+                title: { display: false }
+            }
+        }
+    });
+
+    // --- Chart 3: Credit Tier Distribution ---
+    const creditTierCtx = document.getElementById('creditTierChart').getContext('2d');
+    new Chart(creditTierCtx, {
+        type: 'bar',
+        data: {
+            labels: chartData.credit_tier_labels,
+            datasets: [{
+                label: 'Users by Credit Tier',
+                data: chartData.credit_tier_data,
+                backgroundColor: [
+                    'rgba(156, 163, 175, 0.7)', // Gray - Starter
+                    'rgba(205, 133, 63, 0.7)',  // Bronze
+                    'rgba(192, 192, 192, 0.7)', // Silver
+                    'rgba(255, 215, 0, 0.7)',   // Gold
+                    'rgba(229, 228, 226, 0.7)'  // Platinum
+                ],
+                borderColor: [
+                    'rgba(156, 163, 175, 1)',
+                    'rgba(205, 133, 63, 1)',
+                    'rgba(192, 192, 192, 1)',
+                    'rgba(255, 215, 0, 1)',
+                    'rgba(229, 228, 226, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // --- Chart 4: Popular Phone Brands ---
+    const phoneBrandCtx = document.getElementById('phoneBrandChart').getContext('2d');
+    new Chart(phoneBrandCtx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.phone_brand_labels,
+            datasets: [{
+                label: 'Phone Brand Popularity',
+                data: chartData.phone_brand_data,
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.7)',  // Blue
+                    'rgba(16, 185, 129, 0.7)',  // Green
+                    'rgba(245, 158, 11, 0.7)',  // Yellow
+                    'rgba(239, 68, 68, 0.7)',   // Red
+                    'rgba(139, 92, 246, 0.7)'   // Purple
+                ],
+                borderColor: [
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(139, 92, 246, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'right' },
                 title: { display: false }
             }
         }

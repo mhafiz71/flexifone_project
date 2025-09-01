@@ -25,7 +25,7 @@
                 <div class="p-6">
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-medium text-indigo-600 uppercase tracking-wide">{{ phone.brand }}</span>
+                            <span class="text-xs font-medium text-indigo-600 uppercase tracking-wide">{{ phone.get_brand_display }}</span>
                             {% if phone.credit_available %}
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     <i class="fas fa-check-circle mr-1"></i>Credit Available

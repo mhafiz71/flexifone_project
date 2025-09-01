@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-4">Credit Application</h1>
-        <p class="text-lg text-gray-600">Complete your application to purchase the {{ phone.brand }} {{ phone.name }} on credit
+        <p class="text-lg text-gray-600">Complete your application to purchase the {{ phone.get_brand_display }} {{ phone.name }} on credit
         </p>
     </div>
 
@@ -63,7 +63,60 @@
                             <p class="text-red-600 text-sm mt-1">{{ form.installment_count.errors.0 }}</p>
                         {% endif %}
                     </div>
+
+                    <!-- Guarantor Information Section -->
+                    <div class="border-t pt-6 mt-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user-shield text-yellow-600"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Guarantor Information</h3>
+                        </div>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-yellow-600 mt-0.5 mr-2"></i>
+                                <div class="text-sm text-yellow-800">
+                                    <p class="font-medium mb-1">Guarantor Required</p>
+                                    <p>You need a verified FlexiFone user to guarantee your loan. Your guarantor must:</p>
+                                    <ul class="list-disc list-inside mt-2 space-y-1">
+                                        <li>Be a verified FlexiFone user</li>
+                                        <li>Have a credit score of at least 200</li>
+                                        <li>Have their national ID on file</li>
+                                        <li>Cannot be yourself</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     
+                        <!-- Guarantor Username -->
+                        <div class="mb-4">
+                            <label for="{{ form.guarantor_username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Guarantor's FlexiFone Username <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.guarantor_username }}
+                            {% if form.guarantor_username.help_text %}
+                            <p class="text-gray-500 text-sm mt-1">{{ form.guarantor_username.help_text }}</p>
+                            {% endif %}
+                            {% if form.guarantor_username.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.guarantor_username.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    
+                        <!-- Guarantor National ID -->
+                        <div class="mb-6">
+                            <label for="{{ form.guarantor_national_id.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Guarantor's National ID <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.guarantor_national_id }}
+                            {% if form.guarantor_national_id.help_text %}
+                            <p class="text-gray-500 text-sm mt-1">{{ form.guarantor_national_id.help_text }}</p>
+                            {% endif %}
+                            {% if form.guarantor_national_id.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.guarantor_national_id.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <!-- Submit Button -->
                     <div class="pt-6">
                         <button type="submit" 
@@ -84,7 +137,7 @@
                     <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i class="fas fa-mobile-alt text-2xl text-indigo-600"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-900">{{ phone.brand }} {{ phone.name }}</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ phone.get_brand_display }} {{ phone.name }}</h3>
                     <p class="text-sm text-gray-600">{{ phone.description|truncatewords:10 }}</p>
                 </div>
                 
